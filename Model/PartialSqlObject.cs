@@ -99,6 +99,15 @@ namespace Truffle.Model
             return (int) o;
         }
 
+        public override void LogValues()
+        {
+            Dictionary<string, object> values = GetAllValues();
+            foreach (string key in values.Keys)
+            {
+                Console.WriteLine($"{key}: {values[key]} of type {values[key].GetType()}");
+            }
+        }
+
         protected override string BuildRequest(object raw, string key)
         {
             string val = SqlUtils.Parse(raw);

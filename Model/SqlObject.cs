@@ -65,11 +65,11 @@ namespace Truffle.Model
             return ans;
         }
 
-        public void LogValues()
+        public virtual void LogValues()
         {
             foreach (PropertyInfo p in this.GetType().GetProperties())
             {
-                Console.WriteLine(p.Name + ": " + p.GetValue(this));
+                Console.WriteLine($"{p.Name}: {p.GetValue(this)} of type {p.GetType()}");
             }
         }
 

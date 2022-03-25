@@ -19,6 +19,8 @@ namespace Success.Utils
                     return $"'{((DateTime)raw).ToString("yyyy-MM-dd")}'";
                 case bool:
                     return ((bool)raw)?"1":"0";
+                case double:
+                    return $"{raw}";
             }
             return raw.ToString();
         }
