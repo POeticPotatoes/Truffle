@@ -16,27 +16,32 @@ namespace Truffle.Procedures
             Dictionary<string, object> values = o.GetAllValues();
             foreach (string column in values.Keys)
             {
-                string result = SqlUtils.Parse(values[column]);
+                string result = Parse(values[column]);
                 fields.Add(column, result);
             }
         }
         
-        public void Set(string column, object value)
+        public virtual void Set(string column, object value)
         {
-            fields[column] = SqlUtils.Parse(value);
+            fields[column] = Parse(value);
         }
 
-        public void SetAll(Dictionary<string, object> toAdd)
+        public virtual void SetAll(Dictionary<string, object> toAdd)
         {
             foreach (string column in toAdd.Keys)
             {
-                fields[column] = SqlUtils.Parse(toAdd[column]);
+                Set(column, toAdd[column]);
             }
         }
 
         protected Dictionary<string, string> GetFields()
         {
             return fields;
+        }
+
+        protected virtual string Parse(object o)
+        {
+            return SqlUtils.Parse(o);
         }
     }
 }

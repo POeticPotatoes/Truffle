@@ -1,7 +1,5 @@
 using System;
 using System.Text;
-using Microsoft.AspNetCore.JsonPatch.Internal;
-using Success.Utils;
 using Truffle.Database;
 using Truffle.Model;
 
@@ -19,16 +17,21 @@ namespace Truffle.Procedures
         /// </summary>
         /// <param name="id">The value of the entry's identifier</param>
         /// <param name="idtype">The column name of the entry's identifier</param>
-        public SqlUpdater(string id, string key)
+        public SqlUpdater(object id, string key)
         {
-            this.id = $"'{id}'";
             this.key = key;
+            if (id == null)
+            {
+                this.id = " IS NULL";
+                return;
+            }  
+            this.id = $"={Parse(id)}";
         }
 
         public SqlUpdater(SqlObject o): base(o) {
             key = o.GetId();
             var raw = o.GetType().GetProperty(key).GetValue(o);
-            id = SqlUtils.Parse(raw);
+            id = Parse(raw);
         }
 
         /// <summary>
