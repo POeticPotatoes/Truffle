@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using Success.Utils;
 using Truffle.Database;
 using Truffle.Model;
 
@@ -20,12 +21,7 @@ namespace Truffle.Procedures
         public SqlUpdater(object id, string key)
         {
             this.key = key;
-            if (id == null)
-            {
-                this.id = " IS NULL";
-                return;
-            }  
-            this.id = $"={Parse(id)}";
+            this.id = SqlUtils.ParseSelector(id);
         }
 
         public SqlUpdater(SqlObject o): base(o) {
@@ -52,7 +48,7 @@ namespace Truffle.Procedures
                 text.Append($" {column} = {value},");
             }
             text.Length--;
-            text.Append($" WHERE {key}={id}");
+            text.Append($" WHERE {key}{id}");
 
             //Console.WriteLine(text);
 

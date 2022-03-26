@@ -1,4 +1,5 @@
 using System;
+using Newtonsoft.Json.Linq;
 
 namespace Success.Utils
 {
@@ -23,6 +24,25 @@ namespace Success.Utils
                     return $"{raw}";
             }
             return raw.ToString();
+        }
+
+        public static string ParseSelector(object raw)
+        {
+            if (raw == null) return " IS NULL";
+
+            object[] data;
+            switch (raw)
+            {
+            case JArray:
+                data = ((JArray) raw).ToObject<object[]>();
+                break;
+            case object[]:
+                data = (object[]) raw;
+                break;
+            default:
+                return $"={Parse(raw)}";
+            }
+            return $" is between {Parse(data[0])} and {Parse(data[1])}";
         }
     }
 }
