@@ -42,7 +42,7 @@ namespace Success.Utils
             default:
                 return $"={Parse(raw)}";
             }
-            return $" is between {Parse(data[0])} and {Parse(data[1])}";
+            return $" between {Parse(data[0])} and {Parse(data[1])}";
         }
     }
 }

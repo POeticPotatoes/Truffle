@@ -10,7 +10,22 @@ namespace Truffle.Procedures
 {
     public class SqlSelector : SqlEditor
     {
-        public List<SqlObject> BuildSelect(SqlObject o, DatabaseConnector database)
+        public string BuildSelect(string table, string columns)
+        {
+            Dictionary<string, string> values = GetFields();
+            StringBuilder builder = new StringBuilder($"select {columns} from {table} where ");
+
+            foreach (string key in values.Keys)
+            {
+                builder.Append(key);
+                builder.Append(values[key]);
+                builder.Append(" and ");
+            }
+            builder.Length -= 5;
+            return builder.ToString();
+        }
+
+        public List<SqlObject> BuildObjects(SqlObject o, DatabaseConnector database)
         {
             string columns;
             if (typeof(PartialSqlObject).IsInstanceOfType(o))
@@ -38,21 +53,6 @@ namespace Truffle.Procedures
             }
             
             return ans;
-        }
-
-        public string BuildSelect(string table, string columns)
-        {
-            Dictionary<string, string> values = GetFields();
-            StringBuilder builder = new StringBuilder($"select {columns} from {table} where ");
-
-            foreach (string key in values.Keys)
-            {
-                builder.Append(key);
-                builder.Append(values[key]);
-                builder.Append(" and ");
-            }
-            builder.Length -= 5;
-            return builder.ToString();
         }
 
         public void SetBetween(object a, object b, string column)
