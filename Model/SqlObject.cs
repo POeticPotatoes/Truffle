@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Success.Utils;
 using Truffle.Database;
+using Truffle.Procedures;
 
 namespace Truffle.Model
 {
@@ -71,6 +72,17 @@ namespace Truffle.Model
             {
                 Console.WriteLine($"{p.Name}: {p.GetValue(this)} of type {p.GetType()}");
             }
+        }
+        public virtual bool Create(DatabaseConnector database) 
+        {
+            SqlInserter inserter = new SqlInserter(this);
+            return inserter.Insert(GetTable(),database);
+        }
+
+        public virtual bool Update(DatabaseConnector database) 
+        {
+            SqlUpdater updater = new SqlUpdater(this);
+            return updater.Update(GetTable(),database);
         }
 
         protected void LoadValues(Dictionary<string, object> values)

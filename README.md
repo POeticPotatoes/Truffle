@@ -459,4 +459,4 @@ public static void Run()
 
 ## Additional Notes
 * Truffle is still under heavy development and all of its classes are still subject to change.
-* Planned additions include allowing the `SqlSelector` class to select optional parameters with `OR`, as well as an `SqlObjectBuilder` that would allow for even more flexible creation of SqlObjects.
+* Planned additions include allowing the `SqlSelector` class to select optional parameters with `OR`, as well as an `SqlObjectBuilder` that would allow for even more flexible creation of SqlObjects. I also intend to remove case sensitivity to align the library with sql.
