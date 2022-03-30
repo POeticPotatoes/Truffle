@@ -44,5 +44,10 @@ namespace Success.Utils
             }
             return $" between {Parse(data[0])} and {Parse(data[1])}";
         }
+
+        public static DateTime ParseDate(object raw)
+        {
+            return DateTime.ParseExact((string) raw,"yyyy-MM-dd",null);
+        }
     }
 }

@@ -99,7 +99,12 @@ namespace Truffle.Model
                         p.SetValue(this, null);
                         continue;
                     }
-                    p.SetValue(this, values[attribute.Name]);
+                    if (typeof(DateTime).Equals(p.GetType()) && typeof(string).IsInstanceOfType(value))
+                    {
+                        p.SetValue(this, SqlUtils.ParseDate(value));
+                        continue;
+                    }
+                    p.SetValue(this, value);
                 } catch (Exception e)
                 {Console.WriteLine(e.Message); Console.WriteLine(e.StackTrace);}
             }
