@@ -108,10 +108,9 @@ namespace Truffle.Model
             }
         }
 
-        protected override string BuildRequest(object raw, string key)
+        public override string BuildColumnSelector()
         {
-            string val = SqlUtils.Parse(raw);
-            return $"SELECT * FROM {GetTable()} WHERE {key}={val}";
+            return "*";
         }
     }
 }

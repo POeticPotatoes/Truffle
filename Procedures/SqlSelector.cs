@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 using Success.Utils;
 using Truffle.Database;
@@ -13,7 +12,11 @@ namespace Truffle.Procedures
         public string BuildSelect(string table, string columns)
         {
             Dictionary<string, string> values = GetFields();
-            StringBuilder builder = new StringBuilder($"select {columns} from {table} where ");
+            StringBuilder builder = new StringBuilder($"select {columns} from {table}");
+
+            if (values.Count == 0) return builder.ToString();
+
+            builder.Append(" where ");
 
             foreach (string key in values.Keys)
             {
@@ -27,28 +30,16 @@ namespace Truffle.Procedures
 
         public List<SqlObject> BuildObjects(SqlObject o, DatabaseConnector database)
         {
-            string columns;
-            if (typeof(PartialSqlObject).IsInstanceOfType(o))
-            {
-                columns = "*";
-            } else 
-            {
-                var keys = o.GetAllValues().Keys;
-                columns = String.Join(',', keys);
-            }
-
+            string columns = o.BuildColumnSelector();
             string query = BuildSelect(o.GetTable(), columns);
 
-            var results = (List<Dictionary<string, object>>) database.RunCommand(query);
-
-            Type[] types = {typeof(Dictionary<string, object>)};
-            ConstructorInfo constructor = o.GetType().GetConstructor(BindingFlags.Public, types);
-            List<SqlObject> ans = new List<SqlObject>();
+            var results = (List<Dictionary<string, object>>) database.RunCommand(query, complex: true);
+            var ans = new List<SqlObject>();
 
             foreach (Dictionary<string, object> dict in results)
             {
-                object[] parameters = {dict};
-                SqlObject instance = (SqlObject) constructor.Invoke(parameters);
+                SqlObject instance = (SqlObject) Activator.CreateInstance(o.GetType());
+                instance.LoadValues(dict);
                 ans.Add(instance);
             }
             

@@ -39,7 +39,7 @@ namespace Truffle.Model
         public virtual string BuildAllRequest() 
         {
             
-            return $"SELECT {BuildAttributes()} FROM {GetTable()}";
+            return $"SELECT {BuildColumnSelector()} FROM {GetTable()}";
         }
 
         public string GetId()
@@ -85,7 +85,7 @@ namespace Truffle.Model
             return updater.Update(GetTable(),database);
         }
 
-        protected void LoadValues(Dictionary<string, object> values)
+        public void LoadValues(Dictionary<string, object> values)
         {
             foreach (PropertyInfo p in this.GetType().GetProperties())
             {
@@ -125,13 +125,13 @@ namespace Truffle.Model
             return table.Name;
         }
 
-        protected virtual string BuildRequest(object raw, string key) 
+        protected string BuildRequest(object raw, string key) 
         {
             string val = SqlUtils.Parse(raw);
-            return $"SELECT {BuildAttributes()} FROM {GetTable()} WHERE {key}={val}";
+            return $"SELECT {BuildColumnSelector()} FROM {GetTable()} WHERE {key}={val}";
         }
 
-        protected string BuildAttributes()
+        public virtual string BuildColumnSelector()
         {
             List<string> values = new List<string>();
             foreach (PropertyInfo p in this.GetType().GetProperties())
