@@ -3,8 +3,14 @@ using Newtonsoft.Json.Linq;
 
 namespace Success.Utils
 {
+    /// <summary>
+    /// Provides static methods for parsing objects into Sql compatible formats
+    /// </summary>
     public static class SqlUtils
     {
+        /// <summary>
+        /// Parses a generic object into an Sql compatible format
+        /// </summary>
         public static string Parse(object raw)
         {
             if (raw == null) return "null";
@@ -26,6 +32,9 @@ namespace Success.Utils
             return raw.ToString();
         }
 
+        /// <summary>
+        /// Parses a generic object into a string to be used for a select query
+        /// </summary>
         public static string ParseSelector(object raw)
         {
             if (raw == null) return " IS NULL";
@@ -45,6 +54,11 @@ namespace Success.Utils
             return $" between {Parse(data[0])} and {Parse(data[1])}";
         }
 
+        /// <summary>
+        /// Parses a DateTime into an Sql date format
+        /// </summary>
+        /// <param name="raw"></param>
+        /// <returns></returns>
         public static DateTime ParseDate(object raw)
         {
             return DateTime.ParseExact((string) raw,"yyyy-MM-dd",null);

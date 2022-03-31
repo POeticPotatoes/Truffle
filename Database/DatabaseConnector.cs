@@ -6,14 +6,15 @@ using System.Data.SqlClient;
 namespace Truffle.Database
 {
     /// <summary>
-    /// A Disposable class that connects to a database
+    /// <para> Holds a connection to an Sql database and provides methods to interact with it with queries. </para>
+    /// <para> This class is disposable and should hence be instantiated with the "using" keyword, or by calling its Dispose() method after use. </para>
     /// </summary>
     public class DatabaseConnector : IDisposable
     {
         private readonly SqlConnection connection;
 
         /// <summary>
-        /// Constructor to connect to a database provided as an environment variable
+        /// Initialises a new instance of DatabaseConnector when provided with a connection string to an Sql database.
         /// </summary>
         public DatabaseConnector(string connectionstr) 
         {
@@ -22,7 +23,7 @@ namespace Truffle.Database
         }
 
         /// <summary>
-        /// Disposes of the database connection created
+        /// Disposes of the database connection created and all its resources
         /// </summary>
         public void Dispose() 
         {
@@ -30,10 +31,15 @@ namespace Truffle.Database
         }
 
         /// <summary>
-        /// Runs an sql query and returns the result
+        /// <para> Runs an Sql query or procedure and returns the result. </para>
+        /// <para> This returns an object[] by default, but can be configured to return a List(Dictionary(string, object)) instead
+        /// instead by setting complex=true </para>
         /// </summary>
-        /// <param name="text">The sql query to run</param>
-        /// <returns>The result collected an array of objects</returns>
+        /// <param name="text">The query to run. If the query is a procedure, then the name of the procedure. </param>
+        /// <param name="isProcedure">Whether the command is a procedure</param>
+        /// <param name="values">The procedure parameters to be passed, if any</param>
+        /// <param name="complex">If set to true, returns a List(Dictionary(string, object))</param>
+        /// <returns>The result of running the command</returns>
         public object RunCommand(string text, bool isProcedure=false, object[] values = null, bool complex=false) 
         {
             try {

@@ -4,12 +4,12 @@ using System.Data.SqlClient;
 namespace Truffle.Database
 {
     /// <summary>
-    /// A static class that provides utility for reading sql data
+    /// A static class that provides methods to collect data from an SqlDataReader into other formats.
     /// </summary>
     public static class DataCollector
     {
         /// <summary>
-        /// Collects the values from an SqlDataReader and returns them as an array
+        /// Collects the values from an SqlDataReader and returns them as an object array.
         /// </summary>
         /// <param name="reader">The SqlDataReader to be parsed</param>
         /// <returns>The resulting array</returns>
@@ -31,6 +31,11 @@ namespace Truffle.Database
             return response.ToArray();
         }
 
+        /// <summary>
+        /// Collects the values from an SqlReader and returns them as a List(Dictionary(string, object))
+        /// </summary>
+        /// <param name="reader">The SqlDataDreader to be parsed</param>
+        /// <returns>The resulting array</returns>
         public static List<Dictionary<string, object>> ReadComplexValues(SqlDataReader reader)
         {
             List<Dictionary<string, object>> response = new List<Dictionary<string, object>>();
