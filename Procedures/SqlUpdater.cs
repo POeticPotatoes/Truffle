@@ -21,7 +21,7 @@ namespace Truffle.Procedures
         public SqlUpdater(object value, string column)
         {
             string id = SqlUtils.ParseSelector(value);
-            selector = $"{column}={id}";
+            selector = $"{column}{id}";
         }
 
         /// <summary>
