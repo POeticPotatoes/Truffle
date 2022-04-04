@@ -77,7 +77,15 @@ namespace Truffle.Model
         public object GetValue(string column) 
         {
             if (!Data.ContainsKey(column)) return null;
-            return Data[column];
+            var o = Data[column];
+            if (typeof(System.DBNull).IsInstanceOfType(o)) return null;
+            return o;
+        }
+
+        public void SetValue(string column, object o) 
+        {
+            if (!Data.ContainsKey(column)) return;
+            Data[column] = o;
         }
 
         public override Dictionary<string, object> GetAllValues()
