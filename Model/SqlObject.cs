@@ -127,8 +127,7 @@ namespace Truffle.Model
         /// Creates a new entry in a database with values stored in this object.
         /// </summary>
         /// <param name="database">The database to create a new entry in</param>
-        /// <returns>Whether the entry creation was successful</returns>
-        public void Create(DatabaseConnector database) 
+        public virtual void Create(DatabaseConnector database) 
         {
             SqlInserter inserter = new SqlInserter(this);
             inserter.Insert(GetTable(),database);
@@ -138,18 +137,37 @@ namespace Truffle.Model
         /// Creates a new entry in a database asynchronously with values stored in this object.
         /// </summary>
         /// <param name="database">The database to create a new entry in</param>
-        /// <returns>Whether the entry creation was successful</returns>
-        public async Task CreateAsync(DatabaseConnector database) 
+        public virtual async Task CreateAsync(DatabaseConnector database) 
         {
             SqlInserter inserter = new SqlInserter(this);
             await inserter.InsertAsync(GetTable(),database);
         }
 
         /// <summary>
-        /// Updates an existing entry in a database with values stored in this object.
+        /// Checks if this SqlObject is equal to another SqlObject. 
+        /// Returns true if all its stored values are the same. 
+        /// Ignores class extension.
+        /// </summary>
+        /// <param name="o">The SqlObject to compare with</param>
+        public bool Equals(SqlObject o)
+        {
+            Dictionary<string, object> values = GetAllValues(),
+                compare = o.GetAllValues();
+
+            if (values.Count != compare.Count) return false;
+            foreach (var key in values.Keys)
+            {
+                object value;
+                if (!compare.TryGetValue(key, out value) 
+                    || !value.Equals(values[key])) return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Updates an existing entry in a database asynchronously with values stored in this object.
         /// </summary>
         /// <param name="database">The database to update</param>
-        /// <returns>Whether the entry updating was successful</returns>
         public void Update(DatabaseConnector database) 
         {
             SqlUpdater updater = new SqlUpdater(this);
@@ -160,7 +178,6 @@ namespace Truffle.Model
         /// Updates an existing entry in a database with values stored in this object.
         /// </summary>
         /// <param name="database">The database to update</param>
-        /// <returns>Whether the entry updating was successful</returns>
         public async Task UpdateAsync(DatabaseConnector database) 
         {
             SqlUpdater updater = new SqlUpdater(this);
