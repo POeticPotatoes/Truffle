@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Threading.Tasks;
 using Success.Utils;
 using Truffle.Database;
 using Truffle.Model;
@@ -55,8 +56,32 @@ namespace Truffle.Procedures
         /// <returns>Whether the update to the table was successful</returns>
         public void Update(string table, DatabaseConnector database)
         {
+            string cmd = BuildCommand(table);
+            if (cmd == null) return;
+
+            //Console.WriteLine(text);
+            database.RunCommand(cmd.ToString());
+        }
+
+        /// <summary>
+        /// Updates a table in a database asynchronously based on the changes registered in this object. Will not update the table if no changes have been registered using Set()
+        /// </summary>
+        /// <param name="table">The table to be updated</param>
+        /// <param name="database">The database to be updated</param>
+        /// <returns>Whether the update to the table was successful</returns>
+        public async Task UpdateAsync(string table, DatabaseConnector database)
+        {
+            string cmd = BuildCommand(table);
+            if (cmd == null) return;
+
+            //Console.WriteLine(text);
+            await database.RunCommandAsync(cmd);
+        }
+
+        private string BuildCommand(string table)
+        {
             var fields = GetFields();
-            if (fields.Count == 0) return;
+            if (fields.Count == 0) return null;
             StringBuilder text = new StringBuilder($"UPDATE {table} SET");
 
             foreach (string column in fields.Keys)
@@ -66,9 +91,7 @@ namespace Truffle.Procedures
             }
             text.Length--;
             text.Append($" WHERE {selector}");
-
-            //Console.WriteLine(text);
-            database.RunCommand(text.ToString());
+            return text.ToString();
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 using Success.Utils;
 using Truffle.Database;
 using Truffle.Procedures;
@@ -127,10 +128,21 @@ namespace Truffle.Model
         /// </summary>
         /// <param name="database">The database to create a new entry in</param>
         /// <returns>Whether the entry creation was successful</returns>
-        public virtual void Create(DatabaseConnector database) 
+        public void Create(DatabaseConnector database) 
         {
             SqlInserter inserter = new SqlInserter(this);
             inserter.Insert(GetTable(),database);
+        }
+
+        /// <summary>
+        /// Creates a new entry in a database asynchronously with values stored in this object.
+        /// </summary>
+        /// <param name="database">The database to create a new entry in</param>
+        /// <returns>Whether the entry creation was successful</returns>
+        public async Task CreateAsync(DatabaseConnector database) 
+        {
+            SqlInserter inserter = new SqlInserter(this);
+            await inserter.InsertAsync(GetTable(),database);
         }
 
         /// <summary>
@@ -138,10 +150,21 @@ namespace Truffle.Model
         /// </summary>
         /// <param name="database">The database to update</param>
         /// <returns>Whether the entry updating was successful</returns>
-        public virtual void Update(DatabaseConnector database) 
+        public void Update(DatabaseConnector database) 
         {
             SqlUpdater updater = new SqlUpdater(this);
             updater.Update(GetTable(),database);
+        }
+
+        /// <summary>
+        /// Updates an existing entry in a database with values stored in this object.
+        /// </summary>
+        /// <param name="database">The database to update</param>
+        /// <returns>Whether the entry updating was successful</returns>
+        public async Task UpdateAsync(DatabaseConnector database) 
+        {
+            SqlUpdater updater = new SqlUpdater(this);
+            await updater.UpdateAsync(GetTable(),database);
         }
 
         /// <summary>

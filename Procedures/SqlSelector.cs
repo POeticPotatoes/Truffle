@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Linq;
 using Success.Utils;
 using Truffle.Database;
 using Truffle.Model;
+using System.Threading.Tasks;
 
 namespace Truffle.Procedures
 {
@@ -71,13 +71,13 @@ namespace Truffle.Procedures
         /// <param name="o">The SqlObject that the entries should be mapped to</param>
         /// <param name="database">The database to use</param>
         /// <returns>A List of all mapped SqlObjects</returns>
-        public List<T> BuildObjects<T> (DatabaseConnector database) where T : SqlObject 
+        public async Task<List<T>> BuildObjects<T> (DatabaseConnector database) where T : SqlObject 
         {
             Type t = typeof(T);
             T o = (T) Activator.CreateInstance(t);
             string query = BuildSelect(o);
 
-            var results = (List<Dictionary<string, object>>) database.RunCommand(query, complex: true);
+            var results = (List<Dictionary<string, object>>) await database.RunCommandAsync(query, complex: true);
             var ans = new List<T>();
 
             foreach (Dictionary<string, object> dict in results)

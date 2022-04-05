@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Truffle.Database;
 using Truffle.Model;
 
@@ -30,12 +31,24 @@ namespace Truffle.Procedures
         /// <param name="database">The database to use</param>
         public void Insert(string table, DatabaseConnector database)
         {
-            Dictionary<string, string> fields = GetFields();
-            if (fields.Count == 0) return;
-
-            string command = $"insert {table} ({String.Join(',', fields.Keys)}) values ({String.Join(',',fields.Values)})";
+            string command = BuildCommand(table);
+            if (command == null) return;
             database.RunCommand(command);
             return;
+        }
+
+        public async Task InsertAsync(string table, DatabaseConnector database)
+        {
+            string command = BuildCommand(table);
+            if (command == null) return;
+            await database.RunCommandAsync(command);
+        }
+
+        private string BuildCommand(string table)
+        {
+            Dictionary<string, string> fields = GetFields();
+            if (fields.Count == 0) return null;
+            return $"insert {table} ({String.Join(',', fields.Keys)}) values ({String.Join(',',fields.Values)})";
         }
     }
 }
