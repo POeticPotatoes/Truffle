@@ -28,22 +28,14 @@ namespace Truffle.Procedures
         /// </summary>
         /// <param name="table">The table to be inserted to</param>
         /// <param name="database">The database to use</param>
-        /// <returns>Whether the entry insertion was successful</returns>
-        public Boolean Insert(string table, DatabaseConnector database)
+        public void Insert(string table, DatabaseConnector database)
         {
             Dictionary<string, string> fields = GetFields();
-            if (fields.Count == 0) return false;
+            if (fields.Count == 0) return;
 
             string command = $"insert {table} ({String.Join(',', fields.Keys)}) values ({String.Join(',',fields.Values)})";
-            try {
-                database.RunCommand(command);
-                return true;
-            } catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return false;
-            }
+            database.RunCommand(command);
+            return;
         }
     }
 }

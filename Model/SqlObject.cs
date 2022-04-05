@@ -127,10 +127,10 @@ namespace Truffle.Model
         /// </summary>
         /// <param name="database">The database to create a new entry in</param>
         /// <returns>Whether the entry creation was successful</returns>
-        public virtual bool Create(DatabaseConnector database) 
+        public virtual void Create(DatabaseConnector database) 
         {
             SqlInserter inserter = new SqlInserter(this);
-            return inserter.Insert(GetTable(),database);
+            inserter.Insert(GetTable(),database);
         }
 
         /// <summary>
@@ -138,10 +138,10 @@ namespace Truffle.Model
         /// </summary>
         /// <param name="database">The database to update</param>
         /// <returns>Whether the entry updating was successful</returns>
-        public virtual bool Update(DatabaseConnector database) 
+        public virtual void Update(DatabaseConnector database) 
         {
             SqlUpdater updater = new SqlUpdater(this);
-            return updater.Update(GetTable(),database);
+            updater.Update(GetTable(),database);
         }
 
         /// <summary>

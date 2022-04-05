@@ -53,10 +53,10 @@ namespace Truffle.Procedures
         /// <param name="table">The table to be updated</param>
         /// <param name="database">The database to be updated</param>
         /// <returns>Whether the update to the table was successful</returns>
-        public Boolean Update(string table, DatabaseConnector database)
+        public void Update(string table, DatabaseConnector database)
         {
             var fields = GetFields();
-            if (fields.Count == 0) return true;
+            if (fields.Count == 0) return;
             StringBuilder text = new StringBuilder($"UPDATE {table} SET");
 
             foreach (string column in fields.Keys)
@@ -68,16 +68,7 @@ namespace Truffle.Procedures
             text.Append($" WHERE {selector}");
 
             //Console.WriteLine(text);
-
-            try {
-                database.RunCommand(text.ToString());
-                return true;
-            
-            } catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                return false;
-            }
+            database.RunCommand(text.ToString());
         }
     }
 }

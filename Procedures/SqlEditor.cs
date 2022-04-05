@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Success.Utils;
 using Truffle.Model;
