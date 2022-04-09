@@ -6,6 +6,24 @@ Truffle is a lightweight SQL management library written on top of `ASP.net` that
 * [Technologies](#technologies)
 * [Structure Overview](#structure-overview)
 * [Usage](#usage)
+    - Connecting to a database
+        - [Sql Databases and Queries](#sql-databases-and-queries)
+        - [Running Commands](#running-commands)
+        - [Running Procedures](#running-procedures)
+    - Using models
+        - [Creating a Model](#creating-a-model)
+        - [Instantiating by Key](#instantiating-by-key)
+        - [Instantiating by Column](#instantiating-by-column)
+        - [Instantiating with Values](#instantiating-with-values)
+        - [Instantiating without Values](#instantiating-without-values)
+        - [PartialSqlObject](#using-partialsqlobject)
+    - Retrieving and modifying data
+        - [Selecting](#selecting-from-a-table)
+        - [Updating](#updating-a-table)
+        - [Updating with custom parameters](#updating-with-sqlselector)
+        - [Inserting](#inserting-to-a-table)
+    - Asynchronous methods
+        - [Asynchronous Support](#asynchronous-methods-in-truffle)
 * [Additional Notes](#additional-notes)
 
 ## Introduction
@@ -107,7 +125,27 @@ SqlSelector --> DatabaseConnector
 
 
 ## Usage
-### Sql Databases and Queries
+### Table of Contents
+- Connecting to a database
+    - [Sql Databases and Queries](#sql-databases-and-queries)
+    - [Running Commands](#running-commands)
+    - [Running Procedures](#running-procedures)
+- Using models
+    - [Creating a Model](#creating-a-model)
+    - [Instantiating by Key](#instantiating-by-key)
+    - [Instantiating by Column](#instantiating-by-column)
+    - [Instantiating with Values](#instantiating-with-values)
+    - [Instantiating without Values](#instantiating-without-values)
+    - [PartialSqlObject](#using-partialsqlobject)
+- Retrieving and modifying data
+    - [Selecting](#selecting-from-a-table)
+    - [Updating](#updating-a-table)
+    - [Updating with custom parameters](#updating-with-sqlselector)
+    - [Inserting](#inserting-to-a-table)
+- Asynchronous methods
+    - [Asynchronous Support](#asynchronous-methods-in-truffle)
+
+## Sql Databases and Queries
 The connection to an SQL database is created when a `DatabaseConnector` object is instantiated with a connection string:
 
 ```C#
@@ -117,17 +155,17 @@ public void ConnectToDatabaseExample()
     string str = "YourConnectionString";
     using (DatabaseConnector database = new DatabaseConnector(str))
     {
-        // Use the database here to run sql queries or to create SqlObjects
+        // Use the DatabaseConnector here to run sql queries or to create SqlObjects
     }
 }
 ```  
 
-`DatabaseConnector` is disposable and should hence be used in a disposable context (either with the `using` keyword or by calling `Dispose()` when it is no longer needed).
+> NOTE: `DatabaseConnector` is disposable and should hence be used in a disposable context (either with the `using` keyword or by calling `Dispose()` when it is no longer needed).
 
 Once it is instantiated, it may then be used to run regular SQL queries or procedures, or create instances of SqlObjects.  
 
 
-### Running Commands
+## Running Commands
 Sql queries may be run with the `DatabaseConnector` by calling its `RunCommand()` method:
 
 ```C#
@@ -146,7 +184,7 @@ var response = (List<Dictionary<string, object>>) database.RunCommand("mycommand
 This is useful when handling a query that would return multiple rows of data, or if you wish to have your values mapped to their respective column names.
 
 
-### Running Procedures
+## Running Procedures
 Procedure calls are similarly made with the `RunCommand()` method, but with the configuration of additional parameters to execute the call:
 
 ```C#
@@ -163,7 +201,7 @@ using (DatabaseConnector database = new DatabaseConnector(str))
 Similar to a regular query, `complex` may also be set to `true` for a more substantial output.
 
 
-### Creating a Model
+## Creating a Model
 In order to make use of the modelling capabilities of Truffle, we must first create a POCO (Plain old C# Object) that represents an entry in our table with some additional annotations:
 
 ```C#
@@ -180,6 +218,7 @@ public class Dog : SqlObject
     public DateTime DateOfBirth {get;set;}
 }
 ```
+There are several cases in which you may not know which columns will be returned (For example, in the case of a REST API that might need to return columns but does not need to read them, or if a table has dynamic columns that need to be read). In such cases, the use of a [PartialSqlObject](#using-partialsqlobject) might be more suitable.
 
 There are some important things to note:
 1. `Dog` extends the SqlObject class which provides it with its required additional methods and mappings.
@@ -192,7 +231,7 @@ These annotations are based on Java Spring's Database API, so developers who hav
 We can then make use of several of `SqlObject`'s built-in constructors to instantiate our model in different ways:
 
 
-#### Instantiating by Key
+### Instantiating by Key
 `SqlObject` can be instantiated by accepting a value for its `Id` column:
 
 ```C#
@@ -224,7 +263,7 @@ public static class Main
 Note that the base constructor needs to be called in the inherited class for this to work. This is true for **all** constructors provided by `SqlObject`
 
 
-#### Instantiating by Column
+### Instantiating by Column
 An `SqlObject` can also be instantiated by identifying an entry by column. In the case that there are multiple results for the identifier, only the first one is mapped and returned.
 
 ```C#
@@ -254,7 +293,7 @@ public static class Main
 ```  
 
 
-#### Instantiating with Values
+### Instantiating with Values
 In the case that a model should be instantiated with values instead of directly from a database, this may be done by passing a `Dictionary` into its constructor:
 
 ```C#
@@ -262,7 +301,7 @@ public static void Run()
     {
         using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
         {
-            //Gets all entries from a table
+            //Get all entries from a table
             string command = $"select * from {new Dog().GetTable()}";
             var response = (List<Dictionary<string, object>>) database.RunCommand(command, complex:true);
             
@@ -279,7 +318,7 @@ public static void Run()
 ```
 
 
-#### Instantiating without Values
+### Instantiating without Values
 An `SqlObject` may also be instantiated without any arguments:
 ```C#
 Dog dog = new Dog();
@@ -287,7 +326,7 @@ Dog dog = new Dog();
 This may be useful when creating new entries for a table that do not have values at the time of creation.
 
 
-### Reading a Model
+## Reading a Model
 An `SqlObject` has several built-in methods that are useful in interacting with it.
 
 * `LogValues()` Is a method for debugging that logs all properties in an SqlObject
@@ -296,7 +335,7 @@ An `SqlObject` has several built-in methods that are useful in interacting with 
 * `BuildAllRequest()` returns an Sql query which selects all rows in a table and returns all values with a corresponding property in the model.
 
 
-### Using PartialSqlModel
+## Using PartialSqlObject
 There are some cases in which column values need to be stored, but they are not used actively in a model (Eg. an API service which might need to select all columns for an entry, but does not reference them internally).
 
 In such cases, `PartialSqlObject` may be used instead of `SqlObject` to reduce the amount of boilerplate code that is required.
@@ -337,126 +376,124 @@ public static class Main
 }
 ```
 
+## Selecting from a Table
+Truffle provides an `SqlSelector` class which provides methods to build a select command with specific parameters and columns. This class [may be used in conjunction with `SqlUpdater`](#updating-with-sqlselector) to update columns with specific parameters.
 
-### Updating a table
+Usage:
+
+```C#
+// Create an SQL selector
+SqlSelector selector = new SqlSelector();
+
+// Select rows where breed = "Golden Retriever"
+selector.Set("breed", "Golden Retriever");
+
+// Select rows where age is between 3 and 5. 
+// A SetBetween() method is also provided that has the same function
+int[] ages = {3,5};
+selector.Set("age", ages);
+
+// Get the string from the selector that returns columns name and owner
+string cmd = selector.BuildSelect("[dbo].[tblDog]", "name, owner");
+var result = database.RunCommand(cmd);
+}
+```
+
+On top of the `BuildSelect()` method, SqlSelector is also able to directly parse select results into SqlObjects with its asynchronous `BuildObjects` method:
+
+```C#
+// Create an SQL selector
+SqlSelector selector = new SqlSelector();
+
+// Select rows where breed = "Golden Retriever"
+selector.Set("breed", "Golden Retriever");
+
+// Select rows where age is between 3 and 5
+int[] ages = {3,5};
+selector.Set("age", ages);
+
+// Parse all the results into a list of SqlObjects
+// This method requires the instantiated class to have a constructor that takes no arguments.
+List<Dog> result = await selector.BuildObjects<Dog>(database);
+```
+
+## Updating a table
 Truffle provides an `SqlUpdater` class which provides flexible formats to update a table:
 
 ```C#
-public static void Run()
-{
-    using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
-    {
-        // Creates an SQL updater and sets its target to rows where Name='Spot'
-        SqlUpdater updater = new SqlUpdater("Spot", "Name");
-        
-        // Adds values for the updater to set
-        updater.Set("Age", 3);
-        updater.Set("Owner", "Mike");
+// Create an SQL updater and sets its target to rows where Name='Spot'
+SqlUpdater updater = new SqlUpdater("Spot", "Name");
 
-        // Updates the corresponding table in the database with new values
-        updater.Update("[dbo].[tblDog]", database);
-    }
+// Add values for the updater to set
+updater.Set("Age", 3);
+updater.Set("Owner", "Mike");
+
+// Update the corresponding table in the database with new values
+updater.Update("[dbo].[tblDog]", database);
 }
 ```
 
 `SqlUpdater` also directly accepts an `SqlObject` and will update all of its values accordingly:
 
 ```C#
-public static void Run()
-{
-    using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
-    {
-        // Instantiates a Dog from the database
-        Dog dog = new Dog("Spot", database);
+// Instantiates a Dog from the database
+Dog dog = new Dog("Spot", database);
 
-        // Change values
-        dog.Owner = "Mike";
+// Change values
+dog.Owner = "Mike";
 
-        // Creates an SQL updater and sets its target to rows where Name='Spot'
-        SqlUpdater updater = new SqlUpdater(dog);
+// Create an SQL updater and sets its target to rows where Name='Spot'
+SqlUpdater updater = new SqlUpdater(dog);
 
-        // Updates the corresponding table in the database with new values
-        updater.Update(dog.GetTable(), database);
-    }
+// Update the corresponding table in the database with new values
+updater.Update(dog.GetTable(), database);
 }
-```  
+```
+
+## Updating With SqlSelector
+In the case that items with specific parameters need to be updated, it is also possible to directly pass an `SqlSelector` into `SqlUpdater`:
+
+```C#
+// Instantiate an SqlSelector and set its selection to ages between 1 and 2
+SqlSelector selector = new SqlSelector();
+selector.SetBetween(1, 2, "age");
+
+// Create an SQL updater with the SqlSelector
+SqlUpdater updater = new SqlUpdater(selector);
+updater.Set("Owner", "Local Pet Store");
+
+// Updates all corresponding rows in the database with new values
+updater.Update(dog.GetTable(), database);
+```
 
 
-### Inserting to a Table
+## Inserting to a Table
 Truffle provides an `SqlInserter` class which provides flexible formats to update a table, in similar fashion to `SqlUpdater`:
 ```C#
-public static void Run()
-{
-    using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
-    {
-        // Creates an SQL inserter
-        SqlInserter inserter = new SqlInserter();
-        
-        // Adds values for the inserter to set
-        inserter.Set("Name", "Ruff");
-        inserter.Set("Age", 3);
-        inserter.Set("Owner", "Mike");
+// Create an SQL inserter
+SqlInserter inserter = new SqlInserter();
 
-        // Updates the corresponding table in the database with new values
-        inserter.Insert("[dbo].[tblDog]", database);
-    }
+// Add values for the inserter to set
+inserter.Set("Name", "Ruff");
+inserter.Set("Age", 3);
+inserter.Set("Owner", "Mike");
+
+// Update the corresponding table in the database with new values
+inserter.Insert("[dbo].[tblDog]", database);
 }
 ```
 
 `SqlInserter` may also be instantiated with an `SqlObject` with similar behaviour to `SqlUpdater`.  
 
+## Asynchronous methods in Truffle
+In addition to methods mentioned in this README, Truffle also provides asynchronous versions of most of its methods. Users can refer to the XML documentation in each class for more information on these methods.
 
-
-### Selecting from a Table
-Truffle provides an `SqlSelector` class which provides methods to build a select command with specific parameters and columns:
-
-```C#
-public static void Run()
-{
-    using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
-    {
-        // Creates an SQL selector
-        SqlSelector selector = new SqlSelector();
-
-        // Selects rows where breed = "Golden Retriever"
-        selector.Set("breed", "Golden Retriever");
-
-        // Select rows where age is between 3 and 5
-        int[] ages = {3,5};
-        selector.Set("age", ages);
-
-        // Get the string from the selector that returns columns name and owner
-        string cmd = selector.BuildSelect("[dbo].[tblDog]", "name, owner");
-        var result = database.RunCommand(cmd);
-    }
-}
-```
-
-On top of the `BuildSelect()` method, SqlSelector is also able to directly parse select results into SqlObjects with its `BuildObjects` method:
-
-```C#
-public static void Run()
-{
-    using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
-    {
-        // Creates an SQL selector
-        SqlSelector selector = new SqlSelector();
-
-        // Selects rows where breed = "Golden Retriever"
-        selector.Set("breed", "Golden Retriever");
-
-        // Select rows where age is between 3 and 5
-        int[] ages = {3,5};
-        selector.Set("age", ages);
-
-        // Parses all the results into a list of SqlObjects
-        // This method requires the instantiated class to have a constructor that accepts a single Dictionary<string, object>
-        var result = (List<Dog>) selector.BuildObjects(new Dog(), database);
-    }
-}
-```
+> NOTE: Running asynchronous methods in an SQL database may require you to enable `MultipleActiveResultSets` in your SQL connection string.
 
 
 ## Additional Notes
+* While case sensitivity for inserts and selects are not an issue for Truffle, it must be strictly adhered to when using `PartialSqlObject` as it may cause unpredictable behaviour.
 * Truffle is still under heavy development and all of its classes are still subject to change.
-* Planned additions include allowing the `SqlSelector` class to select optional parameters with `OR`, as well as an `SqlObjectBuilder` that would allow for even more flexible creation of SqlObjects. I also intend to remove case sensitivity to align the library with sql.
+* Planned additions include allowing the `SqlSelector` class to select optional parameters with `OR`, as well as an `SqlObjectBuilder` that would allow for even more flexible creation of SqlObjects.
+
+[Back to Top](#truffle-library)
