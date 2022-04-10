@@ -1,5 +1,5 @@
 # Truffle Library
-Truffle is a lightweight SQL management library written on top of `ASP.net` that aims to simplify interactions between a backend API and its SQL Databases. Programs written with this library are similar to Java Spring in that they follow a Modelling framework with the use of `Annotations` to represent tables, columns and fields.
+Truffle is a lightweight SQL management library written on top of `ASP.net` that aims to simplify interactions between a backend API and its SQL Databases. Programs written with this library are similar to Java Spring in that they follow a Modelling framework with the use of Attributes to represent tables, columns and fields.
 
 ## Table of Contents
 * [Introduction](#introduction)
