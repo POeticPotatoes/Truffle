@@ -23,6 +23,8 @@ namespace Truffle.Procedures
         /// <param name="o">The SqlObject</param>
         public SqlEditor(SqlObject o)
         {
+            o.Clean();
+            o.Validate();
             fields = new Dictionary<string, string>();
             Dictionary<string, object> values = o.GetAllValues();
             foreach (string column in values.Keys)

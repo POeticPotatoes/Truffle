@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Success.Utils;
 using Truffle.Database;
 using Truffle.Procedures;
+using Truffle.Validation;
 
 namespace Truffle.Model
 {
@@ -82,7 +84,14 @@ namespace Truffle.Model
         /// <returns>The name of the Id column</returns>
         public string GetId()
         {
-            return GetId(this.GetType());
+            foreach (var p in GetColumns<IdAttribute> ())
+            {
+                var column = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
+                Console.WriteLine(column.Name);
+                return column.Name;
+            }
+            
+            return null;
         }
 
         /// <summary>
@@ -91,7 +100,8 @@ namespace Truffle.Model
         /// <returns>The value of the table annotation</returns>
         public string GetTable()
         {
-            return GetTable(this.GetType());
+            var table = (TableAttribute) this.GetType().GetCustomAttribute(typeof(TableAttribute));
+            return table.Name;
         }
 
         /// <summary>
@@ -117,7 +127,7 @@ namespace Truffle.Model
         /// </summary>
         public virtual void LogValues()
         {
-            foreach (PropertyInfo p in this.GetType().GetProperties())
+            foreach (var p in GetColumns<ColumnAttribute> ())
             {
                 Console.WriteLine($"{p.Name}: {p.GetValue(this)} of type {p.GetType()}");
             }
@@ -127,8 +137,14 @@ namespace Truffle.Model
         /// Creates a new entry in a database with values stored in this object.
         /// </summary>
         /// <param name="database">The database to create a new entry in</param>
-        public virtual void Create(DatabaseConnector database) 
+        public virtual void Create(DatabaseConnector database, bool validate=false) 
         {
+            if (validate)
+            {
+                Clean();
+                Validate();
+            }
+
             SqlInserter inserter = new SqlInserter(this);
             inserter.Insert(GetTable(),database);
         }
@@ -137,10 +153,45 @@ namespace Truffle.Model
         /// Creates a new entry in a database asynchronously with values stored in this object.
         /// </summary>
         /// <param name="database">The database to create a new entry in</param>
-        public virtual async Task CreateAsync(DatabaseConnector database) 
+        public virtual async Task CreateAsync(DatabaseConnector database, bool validate=false) 
         {
+            if (validate)
+            {
+                Clean();
+                Validate();
+            }
             SqlInserter inserter = new SqlInserter(this);
             await inserter.InsertAsync(GetTable(),database);
+        }
+
+        /// <summary>
+        /// Updates an existing entry in a database asynchronously with values stored in this object.
+        /// </summary>
+        /// <param name="database">The database to update</param>
+        public void Update(DatabaseConnector database, bool validate=false) 
+        {
+            if (validate)
+            {
+                Clean();
+                Validate();
+            }
+            SqlUpdater updater = new SqlUpdater(this);
+            updater.Update(GetTable(),database);
+        }
+
+        /// <summary>
+        /// Updates an existing entry in a database with values stored in this object.
+        /// </summary>
+        /// <param name="database">The database to update</param>
+        public async Task UpdateAsync(DatabaseConnector database, bool validate=false) 
+        {
+            if (validate)
+            {
+                Clean();
+                Validate();
+            }
+            SqlUpdater updater = new SqlUpdater(this);
+            await updater.UpdateAsync(GetTable(),database);
         }
 
         /// <summary>
@@ -165,26 +216,6 @@ namespace Truffle.Model
         }
 
         /// <summary>
-        /// Updates an existing entry in a database asynchronously with values stored in this object.
-        /// </summary>
-        /// <param name="database">The database to update</param>
-        public void Update(DatabaseConnector database) 
-        {
-            SqlUpdater updater = new SqlUpdater(this);
-            updater.Update(GetTable(),database);
-        }
-
-        /// <summary>
-        /// Updates an existing entry in a database with values stored in this object.
-        /// </summary>
-        /// <param name="database">The database to update</param>
-        public async Task UpdateAsync(DatabaseConnector database) 
-        {
-            SqlUpdater updater = new SqlUpdater(this);
-            await updater.UpdateAsync(GetTable(),database);
-        }
-
-        /// <summary>
         /// Loads a Dictionary of values into the object. Keys with corresponding column values are mapped and stored.
         /// </summary>
         /// <param name="values"></param>
@@ -197,61 +228,23 @@ namespace Truffle.Model
 
                 try {
                     var value = values[attribute.Name];
-                    if (typeof(System.DBNull).IsInstanceOfType(value))
+                    switch (value)
                     {
+                    case (System.DBNull):
                         p.SetValue(this, null);
                         continue;
-                    }
-                    if (typeof(DateTime).Equals(p.GetType()) && typeof(string).IsInstanceOfType(value))
-                    {
+                    case (DateTime):
+                        if (!typeof(string).IsInstanceOfType(value)) break;
                         p.SetValue(this, SqlUtils.ParseDate(value));
+                        continue;
+                    case (decimal):
+                        p.SetValue(this, Decimal.ToDouble((decimal) value));
                         continue;
                     }
                     p.SetValue(this, value);
                 } catch (Exception e)
                 {Console.WriteLine(e.Message); Console.WriteLine(e.StackTrace);}
             }
-        }
-
-        /// <summary>
-        /// Returns the name of the Id column for a given Type. If no column has been marked with the id annotation, this returns null.
-        /// </summary>
-        /// <returns>The name of the Id column</returns>
-        protected static string GetId(Type t)
-        {
-            foreach (PropertyInfo p in t.GetProperties())
-            {
-                var attribute = (IdAttribute) p.GetCustomAttribute(typeof(IdAttribute));
-                if (attribute == null) continue;
-
-                var column = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
-                return column.Name;
-            }
-            
-            return null;
-        }
-
-        /// <summary>
-        /// Returns the value of the table annotation for a given Type.
-        /// </summary>
-        /// <returns>The value of the table annotation</returns>
-        protected static string GetTable(Type t)
-        {
-            var table = (TableAttribute) t.GetCustomAttribute(typeof(TableAttribute));
-            return table.Name;
-        }
-
-        /// <summary>
-        /// Builds a select string for an entry with a provided key value pair. 
-        /// If multiple parameters are required, an SqlSelector should be used instead.
-        /// </summary>
-        /// <param name="value">The value of the column</param>
-        /// <param name="column">The name of the column</param>
-        /// <returns>The generated select string</returns>
-        protected string BuildRequest(object value, string column) 
-        {
-            string val = SqlUtils.Parse(value);
-            return $"SELECT {BuildColumnSelector()} FROM {GetTable()} WHERE {column}={val}";
         }
 
         /// <summary>
@@ -270,6 +263,76 @@ namespace Truffle.Model
             }
 
             return String.Join(",", values);
+        }
+
+        /// <summary>
+        /// Builds a select string for an entry with a provided key value pair. 
+        /// If multiple parameters are required, an SqlSelector should be used instead.
+        /// </summary>
+        /// <param name="value">The value of the column</param>
+        /// <param name="column">The name of the column</param>
+        /// <returns>The generated select string</returns>
+        protected string BuildRequest(object value, string column) 
+        {
+            string val = SqlUtils.Parse(value);
+            return $"SELECT {BuildColumnSelector()} FROM {GetTable()} WHERE {column}={val}";
+        }
+
+        public void Clean()
+        {
+
+            foreach (var p in GetColumns<ColumnAttribute> ())
+            {
+                try
+                {
+                    foreach (var a in p.GetCustomAttributes())
+                    {
+                        if (typeof(DataCleanerAttribute).IsInstanceOfType(a))
+                        {
+                            var val = p.GetValue(this);
+                            p.SetValue(this, ((DataCleanerAttribute)a).Clean(val, this));
+                        }
+                    }
+                } catch (Exception e)
+                {
+                    throw new InvalidDataException($"For field '{p.Name}': {e.Message}");
+                }
+            }
+            
+        }
+
+        public void Validate()
+        {
+            foreach (var p in GetColumns<ColumnAttribute> ())
+            {
+                try
+                {
+                    foreach (var a in p.GetCustomAttributes())
+                    {
+                        if (typeof(DataValidatorAttribute).IsInstanceOfType(a))
+                        {
+                            var val = p.GetValue(this);
+                            var validator = (DataValidatorAttribute) a;
+                            if (validator.Validate(val, this)) continue;
+
+                            throw new InvalidDataException(validator.GetMessage());
+                        }
+                    }
+                } catch (Exception e)
+                {
+                    throw new InvalidDataException($"For field '{p.Name}': {e.Message}");
+                }
+            }
+        }
+
+        private IEnumerable<PropertyInfo> GetColumns<T> () where T: Attribute
+        {
+            foreach (PropertyInfo p in this.GetType().GetProperties())
+            {
+                var c = p.GetCustomAttribute(typeof(T));
+                if (c == null) continue;
+                yield return p;
+            }
         }
     }
 }
