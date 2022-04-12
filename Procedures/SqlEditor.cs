@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Success.Utils;
 using Truffle.Model;
+using Truffle.Utils;
 
-namespace Truffle.Procedures
+namespace Trufle.Procedures
 {
     /// <summary>
     /// An abstract class that provides methods to store key value pairs for subsequent actions to an Sql database.

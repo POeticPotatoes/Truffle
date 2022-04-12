@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
-using Success.Utils;
+using Success.Model;
 using Truffle.Database;
 using Truffle.Procedures;
+using Truffle.Utils;
 using Truffle.Validation;
 
 namespace Truffle.Model
@@ -87,7 +88,6 @@ namespace Truffle.Model
             foreach (var p in GetColumns<IdAttribute> ())
             {
                 var column = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
-                Console.WriteLine(column.Name);
                 return column.Name;
             }
             
@@ -295,6 +295,7 @@ namespace Truffle.Model
                     }
                 } catch (Exception e)
                 {
+                    Console.WriteLine(e.StackTrace);
                     throw new InvalidDataException($"For field '{p.Name}': {e.Message}");
                 }
             }
@@ -320,6 +321,7 @@ namespace Truffle.Model
                     }
                 } catch (Exception e)
                 {
+                    Console.WriteLine(e.StackTrace);
                     throw new InvalidDataException($"For field '{p.Name}': {e.Message}");
                 }
             }

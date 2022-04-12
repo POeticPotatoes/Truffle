@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Truffle.Database;
 using Truffle.Model;
+using Trufle.Procedures;
 
 namespace Truffle.Procedures
 {

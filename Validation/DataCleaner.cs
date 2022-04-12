@@ -9,11 +9,11 @@ namespace Truffle.Validation
         public abstract object Clean(object value, SqlObject model);
     }
 
-    public class DecimalAttribute: DataCleanerAttribute
+    public class DecimalsAttribute: DataCleanerAttribute
     {
         private readonly int places;
 
-        public DecimalAttribute(int i)
+        public DecimalsAttribute(int i)
         {
             places = i;
         }
