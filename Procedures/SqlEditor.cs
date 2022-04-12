@@ -21,10 +21,13 @@ namespace Trufle.Procedures
         /// All values from the object are stored and can be retrieved later.
         /// </summary>
         /// <param name="o">The SqlObject</param>
-        public SqlEditor(SqlObject o)
+        public SqlEditor(SqlObject o, bool validate=true)
         {
-            o.Clean();
-            o.Validate();
+            if (validate)
+            {
+                o.Clean();
+                o.Validate();
+            }
             fields = new Dictionary<string, string>();
             Dictionary<string, object> values = o.GetAllValues();
             foreach (string column in values.Keys)

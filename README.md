@@ -16,12 +16,18 @@ Truffle is a lightweight SQL management library written on top of `ASP.net` that
         - [Instantiating by Column](#instantiating-by-column)
         - [Instantiating with Values](#instantiating-with-values)
         - [Instantiating without Values](#instantiating-without-values)
+        - [Modifying a Database](#modifying-a-database)
         - [PartialSqlObject](#using-partialsqlobject)
     - Retrieving and modifying data
         - [Selecting](#selecting-from-a-table)
         - [Updating](#updating-a-table)
         - [Updating with custom parameters](#updating-with-sqlselector)
         - [Inserting](#inserting-to-a-table)
+    - Data Validation
+        - [Data Validation in Truffle](#data-validation-in-truffle)
+        - [Adding Validation](#adding-validation)
+        - [Enabling and Disabling Validation](#enabling-and-disabling-validation)
+        - [Custom Validations](#writing-custom-validations)
     - Asynchronous methods
         - [Asynchronous Support](#asynchronous-methods-in-truffle)
 * [Additional Notes](#additional-notes)
@@ -80,6 +86,14 @@ class Table {
     + Name: string
 }
 
+class DataValidatorAttribute {
+    + Validate(): bool
+}
+
+class DataCleanerAttribute {
+    + Clean(): object
+}
+
 class Id
 
 class SqlEditor {
@@ -105,9 +119,11 @@ class SqlSelector {
 DatabaseConnector *-- SqlConnection
 DatabaseConnector --> DataCollector
 SqlObject --> DatabaseConnector
-SqlObject --> Id
-SqlObject --> Column
-SqlObject --> Table
+SqlObject *-- Id
+SqlObject *-- Column
+SqlObject *-- Table
+SqlObject *-- DataValidatorAttribute
+SqlObject *-- DataCleanerAttribute
 SqlObject <|-- PartialSqlObject
 SqlEditor <|-- SqlUpdater
 SqlEditor <|-- SqlInserter
@@ -118,7 +134,8 @@ SqlSelector --> DatabaseConnector
 ```
 * `DatabaseConnector` is a wrapper class that holds an `SqlConnection`. It provides a method to run SQL queries and collect result values with the use of `DataCollector`
 * `DataCollector` is a static class that provides methods to collect values from an SQL query into  `object[]` and `Dictionary` formats
-* `SqlObject` is an abstract class that represents a model of an entry in a sql table, and classes that extend it may be instantiated with a `DatabaseConnector`. `SqlObject` maps values to properties with the use of annotations `Column`, `Table` and `Id` as flags
+* `SqlObject` is an abstract class that represents a model of an entry in a sql table, and classes that extend it may be instantiated with a `DatabaseConnector`. `SqlObject` maps values to properties with the use of attributes `Column`, `Table` and `Id` as flags
+* `DataValidatorAttribute` and `DataCleanerAttribute` are attributes that can be additionally used by `SqlObject` to provide data conversions and validations
 * `PartialSqlObject` is an extension of `SqlObject` that retrieves column values even if their corresponding properties are not present in the model. This is useful for large tables with many columns that may need to be returned but not read
 * `SqlEditor` is an abstract class that provides methods to collect parameters into a `Dictionary` to perform subsequent SQL queries
 * `SqlInserter`, `SqlUpdater` and `SqlSelector` are all classes used for table modification that extend the `SqlEditor` class and respectively provide methods to insert update, and select data in an SQL table.
@@ -136,12 +153,18 @@ SqlSelector --> DatabaseConnector
     - [Instantiating by Column](#instantiating-by-column)
     - [Instantiating with Values](#instantiating-with-values)
     - [Instantiating without Values](#instantiating-without-values)
+    - [Modifying a Database](#modifying-a-database)
     - [PartialSqlObject](#using-partialsqlobject)
 - Retrieving and modifying data
     - [Selecting](#selecting-from-a-table)
     - [Updating](#updating-a-table)
     - [Updating with custom parameters](#updating-with-sqlselector)
     - [Inserting](#inserting-to-a-table)
+- Data Validation
+    - [Data Validation in Truffle](#data-validation-in-truffle)
+    - [Adding Validation](#adding-validation)
+    - [Enabling and Disabling Validation](#enabling-and-disabling-validation)
+    - [Custom Validations](#writing-custom-validations)
 - Asynchronous methods
     - [Asynchronous Support](#asynchronous-methods-in-truffle)
 
@@ -297,25 +320,23 @@ public static class Main
 In the case that a model should be instantiated with values instead of directly from a database, this may be done by passing a `Dictionary` into its constructor:
 
 ```C#
-public static void Run()
+using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
+{
+    //Get all entries from a table
+    string command = $"select * from {new Dog().GetTable()}";
+    var response = (List<Dictionary<string, object>>) database.RunCommand(command, complex:true);
+    
+    Console.WriteLine("This is a list of dogs.");
+    foreach (var item in response)
     {
-        using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
-        {
-            //Get all entries from a table
-            string command = $"select * from {new Dog().GetTable()}";
-            var response = (List<Dictionary<string, object>>) database.RunCommand(command, complex:true);
-            
-            Console.WriteLine("This is a list of dogs.");
-            foreach (var item in response)
-            {
-                // Instantiate Dog with a dictionary
-                Dog dog = new Dog(item);
-                
-                Console.WriteLine(dog.Name);
-            }
-        }
+        // Instantiate Dog with a dictionary
+        Dog dog = new Dog(item);
+        
+        Console.WriteLine(dog.Name);
     }
+}
 ```
+> NOTE: The code above creates a List of `Dog` objects, which may also be achieved with the [`SqlSelector`](#selecting-from-a-table) class.
 
 
 ### Instantiating without Values
@@ -333,6 +354,28 @@ An `SqlObject` has several built-in methods that are useful in interacting with 
 * `GetAllValues()` Is a method that returns a `Dictionary` of all the properties of the model corresponding to a column.
 * `GetId()` and `GetTable()` returns the value of the `Table` and `Id` annotations of the model, which may be used for encapsulation of the model.
 * `BuildAllRequest()` returns an Sql query which selects all rows in a table and returns all values with a corresponding property in the model.
+
+## Modifying a Database
+`SqlObject` has built in functions that allow it to create an instance of itself in an Sql database, or update an existing entry corresponding to its key column.
+
+```C#
+using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
+{
+    // Create a new Dog
+    var dog = new Dog();
+    dog.Owner = "Scott";
+    dog.Name = "Spot";
+
+    // Add the dog to a database
+    dog.Create(database);
+
+    // Change a value
+    dog.Owner = "Matthew";
+
+    // Update the exisitng entry in a database
+    dog.Update(database);
+}
+```
 
 
 ## Using PartialSqlObject
@@ -485,7 +528,130 @@ inserter.Insert("[dbo].[tblDog]", database);
 
 `SqlInserter` may also be instantiated with an `SqlObject` with similar behaviour to `SqlUpdater`.  
 
-## Asynchronous methods in Truffle
+
+## Data Validation in Truffle
+Truffle allows data to be validated and/or cleaned before it is entered or updated in a database through the use of data validation attributes.
+
+There are two forms of validation in Truffle:
+1. Data Cleaning, which converts values to other formats such as rounding numbers or simplifying strings, as defined by the `DataCleanerAttribute` class.
+2. Data Validation, which returns whether values are valid, as defined by the `DataValidationAttribute` class
+
+While these validations are automatically called before an `SqlObject` is inserted or updated in a database, they may also be called manually with methods `Clean()` and `Validate()`. 
+
+## Adding Validation
+
+To use data validation, append their corresponding attributes to properties in your SqlObject model:
+
+```C#
+[Table("[dbo].[tblDog]")]
+public class Dog : SqlObject
+{
+    // Only allows uppercase and lowercase letters, . / and -
+    // Cannot be null or an empty string
+    [Id, Column("Name"), SimpleString, Required]
+    public string MyName {get;set;}
+
+    // Rounds values to 2 decimal places
+    [Column("Age"), Decimals(2)]
+    public double Age {get;set;}
+
+    // Converts value to a SimpleString, and turns any invalid characters to '-'
+    [Column("Owner"), SimplifyString]
+    public string Owner {get;set;}
+
+    [Column("dob")]
+    public DateTime DateOfBirth {get;set;}
+}
+```
+These validations are then taken into account when entering or modifying data in the database.
+
+
+Existing data cleaners:
+- `DecimalsAttribute` - rounds a value to a set number of decimal places
+- `SimplifyString` - converts any invalid characters (not an uppercase or lowercase letter and not . / or -) into dashes
+
+Exiting data validators:
+- `SimpleString` - checks if a string is a simple string (not an uppercase or lowercase letter and not . / or -)
+- `Required` - checks if a field is filled (not null or an empty string)
+
+
+## Enabling and Disabling Validation
+Validation for an SqlObject is on by default and can be turned off manually. If validation should be ignored for an action, this can be indicated by setting `validate` to false in relevant methods:
+
+```C#
+// All of these methods will ignore validation
+dog.Update(database, validate:false);
+dog.Create(database, validate:false);
+
+var selector = new SqlSelector(dog, validate:false);
+var updater = new SqlUpdater(dog, validate:false);
+```
+
+## Writing Custom Validations
+To write a custom validation, the `DataValidatorAttribute` or `DataCleanerAttribute` class can be extended:
+
+```C#
+// This validator only checks if a dog has an owner if its age is greater than 2
+public class IfAge: DataValidatorAttribute
+{
+    public override bool Validate(object value, SqlObject model)
+    {
+        var dog = (Dog model)
+        if (dog.Age < 2 || value != null) return true;
+        this.SetMessage("This dog is older and requires this field");
+        return false;
+    }
+}
+
+// This cleaner treats a string as a double and rounds it
+public class StringDecimalsAttribute: DataCleanerAttribute
+{
+    private readonly int places;
+    public StringDecimalsAttribute(int places)
+    {
+        this.places = places;
+    }
+    public override object Clean(object value, SqlObject model)
+    {
+        if (value == null) return null;
+        var str = value.ToString();
+        
+        // Convert the string to a double and round it with the Decimals attribute
+        var val = double.Parse(str);
+        var result = new DecimalsAttribute(places).Clean(val, model);
+
+        // Convert the double back to a string and return it
+        return result.ToString();
+    }
+}
+```
+
+`Clean()` and `Validate()` are both abstract methods that need to be implemented, and provide the main purpose of these classes to clean and validate data passed into them. Their methods additionally accept an `SqlObject` that allows them to reference other values in the object.
+
+These attributes can then be used normally in your models:
+
+```C#
+[Table("[dbo].[tblDog]")]
+public class Dog : SqlObject
+{
+    // Will require a name if Age > 2
+    [Id, Column("Name"), IfAge]
+    public string MyName {get;set;}
+
+    [Column("Age"), Decimals(2)]
+    public double Age {get;set;}
+
+    // Rounds weight to 2 decimal places but stores it as a string
+    [Column("Weight"), StringDecimals(2)]
+    public string Weight {get;set;}
+
+    [Column("Owner"), IfAge]
+    public string Owner {get;set;}
+}
+```
+
+
+## Asynchronous Methods in Truffle
 In addition to methods mentioned in this README, Truffle also provides asynchronous versions of most of its methods. Users can refer to the XML documentation in each class for more information on these methods.
 
 > NOTE: Running asynchronous methods in an SQL database may require you to enable `MultipleActiveResultSets` in your SQL connection string.

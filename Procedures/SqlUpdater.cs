@@ -30,7 +30,7 @@ namespace Truffle.Procedures
         /// A subsequent Update() call would update an entry in the database with values from the object.
         /// </summary>
         /// <param name="o">The SqlObject to be updated</param>
-        public SqlUpdater(SqlObject o): base(o) {
+        public SqlUpdater(SqlObject o, bool validate=true): base(o, validate) {
             string key = o.GetId();
             var raw = o.GetType().GetProperty(key).GetValue(o);
             string id = Parse(raw);

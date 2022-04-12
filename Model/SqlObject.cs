@@ -243,7 +243,7 @@ namespace Truffle.Model
                     }
                     p.SetValue(this, value);
                 } catch (Exception e)
-                {Console.WriteLine(e.Message); Console.WriteLine(e.StackTrace);}
+                {Console.WriteLine($"For property {p} of column {attribute.Name}: "); Console.WriteLine(e.Message); Console.WriteLine(e.StackTrace);}
             }
         }
 
@@ -296,7 +296,7 @@ namespace Truffle.Model
                 } catch (Exception e)
                 {
                     Console.WriteLine(e.StackTrace);
-                    throw new InvalidDataException($"For field '{p.Name}': {e.Message}");
+                    throw new InvalidDataException($"For property {p}: {e.Message}");
                 }
             }
             
@@ -322,7 +322,7 @@ namespace Truffle.Model
                 } catch (Exception e)
                 {
                     Console.WriteLine(e.StackTrace);
-                    throw new InvalidDataException($"For field '{p.Name}': {e.Message}");
+                    throw new InvalidDataException($"For property {p}: {e.Message}");
                 }
             }
         }
