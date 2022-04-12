@@ -1,6 +1,10 @@
 # Truffle Library
 Truffle is a lightweight SQL management library written on top of `ASP.net` that aims to simplify interactions between a backend API and its SQL Databases. Programs written with this library are similar to Java Spring in that they follow a Modelling framework with the use of Attributes to represent tables, columns and fields.
 
+Truffle provides additional flexibility by having all of its classes extendable, and allows the user to implement their own data validations and procedures.
+
+This library was written by POeticPotatoes, who created it in the process of building backend services at work.
+
 ## Table of Contents
 * [Introduction](#introduction)
 * [Technologies](#technologies)
@@ -33,10 +37,11 @@ Truffle is a lightweight SQL management library written on top of `ASP.net` that
 * [Additional Notes](#additional-notes)
 
 ## Introduction
-Truffle's classes provide 3 main utilities:
+Truffle's classes provide 4 main utilities:
 1. Running queries and procedures in an SQL database with automatic result parsing
 2. Modeling and mapping of table columns to POCOs
-3. Updating and inserting values into a table with direct mapping from created models
+3. Providing data validation for models
+4. Retrieving, updating and inserting values into a table with direct mapping from created models
 
 These functions may be utilised by instantiation and/or extension of Truffle's classes that allow for the flexible retrieval and modification of data.
 
@@ -658,8 +663,9 @@ In addition to methods mentioned in this README, Truffle also provides asynchron
 
 
 ## Additional Notes
-* While case sensitivity for inserts and selects are not an issue for Truffle, it must be strictly adhered to when using `PartialSqlObject` as it may cause unpredictable behaviour.
 * Truffle is still under heavy development and all of its classes are still subject to change.
-* Planned additions include allowing the `SqlSelector` class to select optional parameters with `OR`, as well as an `SqlObjectBuilder` that would allow for even more flexible creation of SqlObjects.
+* Truffle was created as a result of my work as  a backend software developer, and still lacks many functions (which will be added when I need them).
+* While case sensitivity for inserts and selects are not an issue for Truffle, it must be strictly adhered to when using `PartialSqlObject` as it may cause unpredictable behaviour.
+* Planned additions (besides the obvious DELETE function) include allowing the `SqlSelector` class to select optional parameters with `OR`, as well as an `SqlObjectBuilder` that would allow for even more flexible creation of SqlObjects.
 
 [Back to Top](#truffle-library)
