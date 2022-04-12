@@ -572,12 +572,14 @@ These validations are then taken into account when entering or modifying data in
 
 
 Existing data cleaners:
-- `DecimalsAttribute` - rounds a value to a set number of decimal places
+- `DecimalsAttribute` - rounds a value to a specified number of decimal places
 - `SimplifyString` - converts any invalid characters (not an uppercase or lowercase letter and not . / or -) into dashes
 
 Exiting data validators:
 - `SimpleString` - checks if a string is a simple string (not an uppercase or lowercase letter and not . / or -)
 - `Required` - checks if a field is filled (not null or an empty string)
+- `MinValue` - checks if a value is above or equal to a minimum value
+- `MaxValue` - checks if a value is below or equal to a maximum value
 
 
 ## Enabling and Disabling Validation

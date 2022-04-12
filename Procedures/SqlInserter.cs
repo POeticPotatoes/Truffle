@@ -38,6 +38,12 @@ namespace Truffle.Procedures
             return;
         }
 
+        /// <summary>
+        /// Inserts a new entry to the database in the given table asynchronously, with values stored in this object.
+        /// If no values are present, no entry is created.
+        /// </summary>
+        /// <param name="table">The table to be inserted to</param>
+        /// <param name="database">The database to use</param>
         public async Task InsertAsync(string table, DatabaseConnector database)
         {
             string command = BuildCommand(table);

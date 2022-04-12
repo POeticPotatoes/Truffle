@@ -278,6 +278,10 @@ namespace Truffle.Model
             return $"SELECT {BuildColumnSelector()} FROM {GetTable()} WHERE {column}={val}";
         }
 
+        /// <summary>
+        /// Parses all columns with provided DataCleaners and sets their values to the result. 
+        /// This method is called by default during Create() and Update() and may be turned off by setting validate:false
+        /// </summary>
         public void Clean()
         {
 
@@ -302,6 +306,10 @@ namespace Truffle.Model
             
         }
 
+        /// <summary>
+        /// Checks all columns against provided DataValidators and returns if the validation passed.
+        /// This method is called by default during Create() and Update() and may be turned off by setting validate:false
+        /// </summary>
         public void Validate()
         {
             foreach (var p in GetColumns<ColumnAttribute> ())

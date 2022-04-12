@@ -3,22 +3,42 @@ using Truffle.Model;
 
 namespace Truffle.Validation
 {
+    /// <summary>
+    /// An abstract attribute class that can be extended to implement methods for validating data
+    /// </summary>
     [AttributeUsage( AttributeTargets.Property )]
     public abstract class DataValidatorAttribute: Attribute 
     {
         private string Message{get;set;}
+
+        /// <summary>
+        /// Validates a value by performing checks on it
+        /// </summary>
+        /// <param name="value">The value to be checked</param>
+        /// <param name="model">The SqlObject being validated</param>
+        /// <returns><Whether the validation passed/returns>
         public abstract bool Validate(object value, SqlObject model);
+
+        /// <summary>
+        /// Returns any additional messages created during validation
+        /// </summary>
         public string GetMessage()
         {
             return this.Message;
         }
 
+        /// <summary>
+        /// Sets an additional message returned by a validation attempt
+        /// </summary>
         public void SetMessage(string m)
         {
             this.Message = m;
         }
     }
 
+    /// <summary>
+    /// Checks that a string only contains upper and lowercase letters, . / and -
+    /// </summary>
     public class SimpleStringAttribute: DataValidatorAttribute 
     {
         public override bool Validate(object value, SqlObject model)
@@ -37,10 +57,16 @@ namespace Truffle.Validation
         }
     }
 
+    /// <summary>
+    /// Checks that a number is not any lower than a specified value
+    /// </summary>
     public class MinValueAttribute: DataValidatorAttribute 
     {
         private readonly double value;
 
+        /// <summary>
+        /// Initiates an instance of a MinValueAttribute with the minimum value to accept
+        /// </summary>
         public MinValueAttribute(double value)
         {
             this.value = value;
@@ -55,10 +81,16 @@ namespace Truffle.Validation
         }
     }
 
+    /// <summary>
+    /// Checks that a number does not exceed a specified value
+    /// </summary>
     public class MaxValueAttribute: DataValidatorAttribute 
     {
         private readonly double value;
 
+        /// <summary>
+        /// Initiates an instance of a MaxValueAttribute with the maximum value to accept
+        /// </summary>
         public MaxValueAttribute(double value)
         {
             this.value = value;
@@ -73,6 +105,9 @@ namespace Truffle.Validation
         }
     }
 
+    /// <summary>
+    /// Checks that a value is not null or an empty string
+    /// </summary>
     public class RequiredAttribute: DataValidatorAttribute 
     {
         public override bool Validate(object value, SqlObject model)
@@ -82,40 +117,6 @@ namespace Truffle.Validation
                 || ((string)value).Length > 0)) return true;
 
             this.SetMessage("Required field was left blank");
-            return false;
-        }
-    }
-
-    public class AsDouble: DataValidatorAttribute
-    {
-        private readonly DataValidatorAttribute validator;
-
-        public AsDouble(DataValidatorAttribute validator)
-        {
-            this.validator = validator;
-        }
-        public override bool Validate(object value, SqlObject model)
-        {
-            var val = double.Parse(value.ToString());
-            if (validator.Validate(val, model)) return true;
-            this.SetMessage(validator.GetMessage());
-            return false;
-        }
-    }
-
-    public class AsString: DataValidatorAttribute
-    {
-        private readonly DataValidatorAttribute validator;
-
-        public AsString(DataValidatorAttribute validator)
-        {
-            this.validator = validator;
-        }
-        public override bool Validate(object value, SqlObject model)
-        {
-            var val = value.ToString();
-            if (validator.Validate(val, model)) return true;
-            this.SetMessage(validator.GetMessage());
             return false;
         }
     }
