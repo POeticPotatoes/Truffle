@@ -219,7 +219,7 @@ namespace Truffle.Model
         /// Loads a Dictionary of values into the object. Keys with corresponding column values are mapped and stored.
         /// </summary>
         /// <param name="values"></param>
-        public void LoadValues(Dictionary<string, object> values)
+        public virtual void LoadValues(Dictionary<string, object> values)
         {
             foreach (PropertyInfo p in this.GetType().GetProperties())
             {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Azure;
 using Success.Model;
 using Truffle.Database;
 using Truffle.Utils;
@@ -47,7 +48,6 @@ namespace Truffle.Model
             if (response.Count == 0) throw new KeyNotFoundException($"{value} was not present in the database");
 
             LoadValues(response[0]);
-            Data  = response[0];
         }
 
         /// <summary>
@@ -67,7 +67,12 @@ namespace Truffle.Model
             if (response.Count == 0) throw new KeyNotFoundException($"{column} of value {SqlUtils.Parse(value)} was not present in the database");
 
             LoadValues(response[0]);
-            Data  = response[0];
+        }
+
+        public override void LoadValues(Dictionary<string, object> values)
+        {
+            base.LoadValues(values);
+            Data = values;
         }
 
         /// <summary>

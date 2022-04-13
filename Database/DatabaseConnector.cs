@@ -42,7 +42,6 @@ namespace Truffle.Database
         /// <param name="complex">If set to true, returns a List(Dictionary(string, object))</param>
         public object RunCommand(string text, bool isProcedure=false, object[] values = null, bool complex=false) 
         {
-            Console.WriteLine(text);
             try {
                 using (var cmd = BuildSqlCommand(text, isProcedure, values))
                 {
