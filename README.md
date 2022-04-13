@@ -580,6 +580,7 @@ Exiting data validators:
 - `Required` - checks if a field is filled (not null or an empty string)
 - `MinValue` - checks if a value is above or equal to a minimum value
 - `MaxValue` - checks if a value is below or equal to a maximum value
+- `RegexValidation` - matches a field against a regular expression
 
 
 ## Enabling and Disabling Validation

@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using Truffle.Model;
 
 namespace Truffle.Validation
@@ -117,6 +118,22 @@ namespace Truffle.Validation
                 || ((string)value).Length > 0)) return true;
 
             this.SetMessage("Required field was left blank");
+            return false;
+        }
+    }
+
+    public class RegexValidationAttribute: DataValidatorAttribute
+    {
+        private readonly Regex expression;
+        public RegexValidationAttribute(string str)
+        {
+            this.expression = new Regex(str);
+        }
+
+        public override bool Validate(object obj, SqlObject model)
+        {
+            if (expression.Match((string) obj).Success) return true;
+            this.SetMessage($"'{obj}' did not match the regular expression '{expression}'");
             return false;
         }
     }
