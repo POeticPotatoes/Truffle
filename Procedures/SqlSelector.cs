@@ -91,6 +91,23 @@ namespace Truffle.Procedures
             return ans;
         }
 
+        public async Task<List<SqlObject>> BuildObjects (SqlObject o, DatabaseConnector database)
+        {
+            string query = BuildSelect(o);
+
+            var results = (List<Dictionary<string, object>>) await database.RunCommandAsync(query, complex: true);
+            var ans = new List<SqlObject>();
+
+            foreach (Dictionary<string, object> dict in results)
+            {
+                var instance = (SqlObject) Activator.CreateInstance(o.GetType());
+                instance.LoadValues(dict);
+                ans.Add(instance);
+            }
+            
+            return ans;
+        }
+
         /// <summary>
         /// Sets a selector for a range of values (eg. between certain dates) corresponding to a column in a table.
         /// </summary>

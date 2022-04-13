@@ -33,12 +33,7 @@ namespace Truffle.Model
         /// <param name="database">The database to connect to</param>
         public SqlObject(object value, DatabaseConnector database)
         {
-            string req = BuildRequest(value, GetId());
-
-            var response = (List<Dictionary<string, object>>) database.RunCommand(req, complex:true);
-            if (response.Count == 0) throw new KeyNotFoundException($"{value} was not present in the database");
-
-            LoadValues(response[0]);
+            initFromDatabase(value, GetId(), database);
         }
 
         /// <summary>
@@ -51,6 +46,11 @@ namespace Truffle.Model
         /// <param name="column">The name of the column</param>
         /// <param name="database">The database to connect to</param>
         public SqlObject(object value, string column, DatabaseConnector database)
+        {
+            initFromDatabase(value, column, database);
+        }
+
+        protected void initFromDatabase(object value, string column, DatabaseConnector database)
         {
             string req = BuildRequest(value, column);
 
@@ -83,7 +83,7 @@ namespace Truffle.Model
         /// Returns the name of the Id column for the object. If no column has been marked with the id annotation, this returns null.
         /// </summary>
         /// <returns>The name of the Id column</returns>
-        public string GetId()
+        public virtual string GetId()
         {
             foreach (var p in GetColumns<IdAttribute> ())
             {
@@ -98,7 +98,7 @@ namespace Truffle.Model
         /// Returns the value of the table annotation for this object.
         /// </summary>
         /// <returns>The value of the table annotation</returns>
-        public string GetTable()
+        public virtual string GetTable()
         {
             var table = (TableAttribute) this.GetType().GetCustomAttribute(typeof(TableAttribute));
             return table.Name;

@@ -22,6 +22,7 @@ This library was written by POeticPotatoes, who created it in the process of bui
         - [Instantiating without Values](#instantiating-without-values)
         - [Modifying a Database](#modifying-a-database)
         - [PartialSqlObject](#using-partialsqlobject)
+        - [GenericSqlObject](#using-genericsqlobject)
     - Retrieving and modifying data
         - [Selecting](#selecting-from-a-table)
         - [Updating](#updating-a-table)
@@ -160,6 +161,7 @@ SqlSelector --> DatabaseConnector
     - [Instantiating without Values](#instantiating-without-values)
     - [Modifying a Database](#modifying-a-database)
     - [PartialSqlObject](#using-partialsqlobject)
+    - [GenericSqlObject](#using-genericsqlobject)
 - Retrieving and modifying data
     - [Selecting](#selecting-from-a-table)
     - [Updating](#updating-a-table)
@@ -181,7 +183,7 @@ public void ConnectToDatabaseExample()
 {
     // Get a connection string
     string str = "YourConnectionString";
-    using (DatabaseConnector database = new DatabaseConnector(str))
+    using (var database = new DatabaseConnector(str))
     {
         // Use the DatabaseConnector here to run sql queries or to create SqlObjects
     }
@@ -197,7 +199,7 @@ Once it is instantiated, it may then be used to run regular SQL queries or proce
 Sql queries may be run with the `DatabaseConnector` by calling its `RunCommand()` method:
 
 ```C#
-using (DatabaseConnector database = new DatabaseConnector(str))
+using (var database = new DatabaseConnector(str))
 {
     var response = (object[]) database.RunCommand("select * from [dbo].[yourtable]");
 }
@@ -216,7 +218,7 @@ This is useful when handling a query that would return multiple rows of data, or
 Procedure calls are similarly made with the `RunCommand()` method, but with the configuration of additional parameters to execute the call:
 
 ```C#
-using (DatabaseConnector database = new DatabaseConnector(str))
+using (var database = new DatabaseConnector(str))
 {
     var procedureName = "MyProcedure";
     string[] parameters = ["param1", "param2"]; // Your procedure parameters
@@ -246,6 +248,7 @@ public class Dog : SqlObject
     public DateTime DateOfBirth {get;set;}
 }
 ```
+
 There are several cases in which you may not know which columns will be returned (For example, in the case of a REST API that might need to return columns but does not need to read them, or if a table has dynamic columns that need to be read). In such cases, the use of a [PartialSqlObject](#using-partialsqlobject) might be more suitable.
 
 There are some important things to note:
@@ -276,10 +279,10 @@ public static class Main
 {
     public static void Run()
     {
-        using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
+        using (var database = new DatabaseConnector("MyConnectionString"))
         {
             // Get a dog with Name='Spot'
-            Dog dog = new Dog("Spot", database); 
+            var dog = new Dog("Spot", database); 
 
             // Prints "Hi, my name is Spot!"
             Console.WriteLine($"Hi, my name is {dog.Name}!");
@@ -308,10 +311,10 @@ public static class Main
 {
     public static void Run()
     {
-        using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
+        using (var database = new DatabaseConnector("MyConnectionString"))
         {
             // Get a dog with Owner = Tom'
-            Dog dog = new Dog("Tom", "Owner", database); 
+            var dog = new Dog("Tom", "Owner", database); 
 
             // Prints "Hi, my name is Owner!"
             Console.WriteLine($"Hi, my owner is {dog.Owner}!");
@@ -325,17 +328,17 @@ public static class Main
 In the case that a model should be instantiated with values instead of directly from a database, this may be done by passing a `Dictionary` into its constructor:
 
 ```C#
-using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
+using (var database = new DatabaseConnector("MyConnectionString"))
 {
     //Get all entries from a table
-    string command = $"select * from {new Dog().GetTable()}";
+    var command = $"select * from {new Dog().GetTable()}";
     var response = (List<Dictionary<string, object>>) database.RunCommand(command, complex:true);
     
     Console.WriteLine("This is a list of dogs.");
     foreach (var item in response)
     {
         // Instantiate Dog with a dictionary
-        Dog dog = new Dog(item);
+        var dog = new Dog(item);
         
         Console.WriteLine(dog.Name);
     }
@@ -355,8 +358,9 @@ This may be useful when creating new entries for a table that do not have values
 ## Reading a Model
 An `SqlObject` has several built-in methods that are useful in interacting with it.
 
+* `LoadValues()` Loads all the values from a Dictionary into a model
 * `LogValues()` Is a method for debugging that logs all properties in an SqlObject
-* `GetAllValues()` Is a method that returns a `Dictionary` of all the properties of the model corresponding to a column.
+* `GetAllValues()` Returns a `Dictionary` of all the properties of the model corresponding to a column.
 * `GetId()` and `GetTable()` returns the value of the `Table` and `Id` annotations of the model, which may be used for encapsulation of the model.
 * `BuildAllRequest()` returns an Sql query which selects all rows in a table and returns all values with a corresponding property in the model.
 
@@ -364,7 +368,7 @@ An `SqlObject` has several built-in methods that are useful in interacting with 
 `SqlObject` has built in functions that allow it to create an instance of itself in an Sql database, or update an existing entry corresponding to its key column.
 
 ```C#
-using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
+using (var database = new DatabaseConnector("MyConnectionString"))
 {
     // Create a new Dog
     var dog = new Dog();
@@ -384,11 +388,13 @@ using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
 
 
 ## Using PartialSqlObject
-There are some cases in which column values need to be stored, but they are not used actively in a model (Eg. an API service which might need to select all columns for an entry, but does not reference them internally).
+There are some cases in which column values need to be stored, but their names might be uncertain, or they are not used actively in a model (Eg. an API service which might need to select all columns for an entry, but does not reference them internally).
 
 In such cases, `PartialSqlObject` may be used instead of `SqlObject` to reduce the amount of boilerplate code that is required.
 
 `PartialSqlObject` is an extension of `SqlObject` that selects ALL(*) columns in a table when creating an object, and stores them regardless of whether they correspond to a property in the model. This means that `GetAllValues()` returns the full result of the table without needing to define unused properties.
+
+There is also a [further extension](#using-genericsqlobject) of `PartialSqlObject` which may be used for dynamic table names or key columns, and entirely removes the need for extension before it is used.
 
 ```C#
 [Table("[dbo].[tblDog]")]
@@ -403,14 +409,14 @@ public static class Main
 {
     public static void Run()
     {
-        using (DatabaseConnector database = new DatabaseConnector("MyConnectionString"))
+        using (var database = new DatabaseConnector("MyConnectionString"))
         {
             // Get a dog with Name = Spot'
             Dog dog = new Dog("Spot", database); 
 
             // Modify its properties
             dog.Name = "Spotto";
-
+            
             // Get all its values and print them
             // The output will have ALL the columns from [tblDog]
             // Its new Name property will also be reflected
@@ -419,10 +425,67 @@ public static class Main
             {
                 Console.WriteLine($"{key}: {values[key]}");
             }
+
+            // Access values from the object even without a defined property
+            Console.WriteLine($"Hi! My age is {dog.GetInt("Age")}");
+            Console.WriteLine($"Hi! My owner is {dog.GetString("Owner")}");
+
+            // Set values in the object even without a defined property
+            dog.SetValue("Weight", 33.5);
         }
     }
 }
 ```
+
+## Using GenericSqlObject
+For objects that may belong to dynamic tables or databases with uncertain keys, `GenericSqlObject` is a further extension of `PartialSqlObject` that entirely removes the need for a class to be defined with attributes before using it.
+
+```C#
+// This method gets an unknown table and looks under the specified field for an object owned by "James"
+
+public void UnknownTable(string ownerColumn, string tableName)
+{
+    using (var database = new DatabaseConnector("MyConnectionString"))
+    {
+        // This constructor accepts a table and key, followed by the same values required to instantiate an SqlObject by column
+        // Build a sample object with tableName and unspecified key
+        // Load values from the database for an object with the owner column being "James"
+        var unknownObject =  new GenericSqlObject(tableName, null, ownerColumn, "James");
+
+        // Access and set values from the object even without a defined property
+        // These methods are inherited from PartialSqlObject
+        Console.WriteLine($"Hi! I'm changing my owner from {unknownObject.GetString(ownerColumn)} to Marnie!");
+        unknownObject.SetValue(ownerColumn, "Marnie");
+    }
+}
+
+```
+
+In the implementation of a simple `GetAll()` method which returns all the values from an unknown table, `GenericSqlObject` may be used as a token and passed into [`SqlSelector`](#selecting-from-a-table) to read all the values efficiently:
+
+```C#
+public List<Dictionary<string, object>> GetAll(string tableName)
+{
+    using (var database = new DatabaseConnector("MyConnectionString"))
+    {
+        var objectToken = new GenericSqlObject();
+        objectToken.Table = tableName;
+
+        var selector = new SqlSelector();
+
+        // Since no parameters are specified for the select, all rows in the table are returned.
+        List<SqlObject> objects = selector.BuildObjects(objectToken, database);
+
+       // Return all the values as a List of Dictionary values
+       return objects.select(o => o.GetAllValues());
+    }
+}
+
+```
+
+
+`GenericSqlObject` may also be extended in instances where there are a great number of tables with similar function such that the same methods may be shared over many instances of different tables, without the need to define classes for each of them specifically.
+
 
 ## Selecting from a Table
 Truffle provides an `SqlSelector` class which provides methods to build a select command with specific parameters and columns. This class [may be used in conjunction with `SqlUpdater`](#updating-with-sqlselector) to update columns with specific parameters.
@@ -451,7 +514,7 @@ On top of the `BuildSelect()` method, SqlSelector is also able to directly parse
 
 ```C#
 // Create an SQL selector
-SqlSelector selector = new SqlSelector();
+var selector = new SqlSelector();
 
 // Select rows where breed = "Golden Retriever"
 selector.Set("breed", "Golden Retriever");
@@ -470,7 +533,7 @@ Truffle provides an `SqlUpdater` class which provides flexible formats to update
 
 ```C#
 // Create an SQL updater and sets its target to rows where Name='Spot'
-SqlUpdater updater = new SqlUpdater("Spot", "Name");
+var updater = new SqlUpdater("Spot", "Name");
 
 // Add values for the updater to set
 updater.Set("Age", 3);
@@ -485,13 +548,13 @@ updater.Update("[dbo].[tblDog]", database);
 
 ```C#
 // Instantiates a Dog from the database
-Dog dog = new Dog("Spot", database);
+var dog = new Dog("Spot", database);
 
 // Change values
 dog.Owner = "Mike";
 
 // Create an SQL updater and sets its target to rows where Name='Spot'
-SqlUpdater updater = new SqlUpdater(dog);
+var updater = new SqlUpdater(dog);
 
 // Update the corresponding table in the database with new values
 updater.Update(dog.GetTable(), database);
@@ -503,11 +566,11 @@ In the case that items with specific parameters need to be updated, it is also p
 
 ```C#
 // Instantiate an SqlSelector and set its selection to ages between 1 and 2
-SqlSelector selector = new SqlSelector();
+var selector = new SqlSelector();
 selector.SetBetween(1, 2, "age");
 
 // Create an SQL updater with the SqlSelector
-SqlUpdater updater = new SqlUpdater(selector);
+var updater = new SqlUpdater(selector);
 updater.Set("Owner", "Local Pet Store");
 
 // Updates all corresponding rows in the database with new values
@@ -519,7 +582,7 @@ updater.Update(dog.GetTable(), database);
 Truffle provides an `SqlInserter` class which provides flexible formats to update a table, in similar fashion to `SqlUpdater`:
 ```C#
 // Create an SQL inserter
-SqlInserter inserter = new SqlInserter();
+var inserter = new SqlInserter();
 
 // Add values for the inserter to set
 inserter.Set("Name", "Ruff");
