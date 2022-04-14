@@ -1,6 +1,6 @@
 using System;
 
-namespace Success.Model
+namespace Truffle.Model
 {
     /// <summary>
     /// Flags an object property as a column in a database
