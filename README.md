@@ -84,6 +84,8 @@ class PartialSqlObject {
     + GetBoolean(key: string): bool
 }
 
+class GenericSqlObject
+
 class Column {
     + Name: string
 }
@@ -131,6 +133,7 @@ SqlObject *-- Table
 SqlObject *-- DataValidatorAttribute
 SqlObject *-- DataCleanerAttribute
 SqlObject <|-- PartialSqlObject
+PartialSqlObject <|-- GenericSqlObject
 SqlEditor <|-- SqlUpdater
 SqlEditor <|-- SqlInserter
 SqlEditor <|-- SqlSelector
@@ -142,7 +145,8 @@ SqlSelector --> DatabaseConnector
 * `DataCollector` is a static class that provides methods to collect values from an SQL query into  `object[]` and `Dictionary` formats
 * `SqlObject` is an abstract class that represents a model of an entry in a sql table, and classes that extend it may be instantiated with a `DatabaseConnector`. `SqlObject` maps values to properties with the use of attributes `Column`, `Table` and `Id` as flags
 * `DataValidatorAttribute` and `DataCleanerAttribute` are attributes that can be additionally used by `SqlObject` to provide data conversions and validations
-* `PartialSqlObject` is an extension of `SqlObject` that retrieves column values even if their corresponding properties are not present in the model. This is useful for large tables with many columns that may need to be returned but not read
+* `PartialSqlObject` is an extension of `SqlObject` that retrieves column values even if their corresponding properties are not present in the model. This is useful for large tables with many columns.
+* `GenericSqlObject` is a further extension of `PartialSqlObject` that removes the need for class extension or definition before it is used. This is useful for tables with unknown names or columns.
 * `SqlEditor` is an abstract class that provides methods to collect parameters into a `Dictionary` to perform subsequent SQL queries
 * `SqlInserter`, `SqlUpdater` and `SqlSelector` are all classes used for table modification that extend the `SqlEditor` class and respectively provide methods to insert update, and select data in an SQL table.
 
