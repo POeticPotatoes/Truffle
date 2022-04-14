@@ -122,9 +122,16 @@ namespace Truffle.Validation
         }
     }
 
+    /// <summary>
+    /// Validates a string against a regular expression
+    /// </summary>
     public class RegexValidationAttribute: DataValidatorAttribute
     {
         private readonly Regex expression;
+
+        /// <summary>
+        /// Initiates an instance of a RegexValidationAttribute with the regular expression to match
+        /// </summary>
         public RegexValidationAttribute(string str)
         {
             this.expression = new Regex(str);

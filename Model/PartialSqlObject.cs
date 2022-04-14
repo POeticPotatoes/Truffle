@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Azure;
 using Success.Model;
 using Truffle.Database;
 using Truffle.Utils;
@@ -9,12 +8,10 @@ using Truffle.Utils;
 namespace Truffle.Model
 {
     /// <summary>
-    /// <para> An extension of the SqlObject class that stores all columns from a table on top of the defined columns, and provides methods
-    /// for accessing and reading them. This class should be extended by models where column names might be dynamic or data does not need to be read locally.</para>
-    /// 
-    /// <para> This class can be instantiated, and stores all values as generic column data that can be accessed with GetAllValues(). </para>
+    /// An extension of SqlObject that stores all columns from a table on top of the defined columns, and provides methods
+    /// for accessing and reading them. This class should be extended by models where column names might be dynamic or data does not need to be read locally.
     /// </summary>
-    public class PartialSqlObject : SqlObject
+    public abstract class PartialSqlObject : SqlObject
     {
         private Dictionary<string, object> Data = new Dictionary<string, object>();
 
