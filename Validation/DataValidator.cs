@@ -132,6 +132,7 @@ namespace Truffle.Validation
 
         public override bool Validate(object obj, SqlObject model)
         {
+            if (obj == null) return true;
             if (expression.Match((string) obj).Success) return true;
             this.SetMessage($"'{obj}' did not match the regular expression '{expression}'");
             return false;

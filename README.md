@@ -245,7 +245,11 @@ public class Dog : SqlObject
     [Column("Owner")]
     public string Owner {get;set;}
     [Column("dob")]
-    public DateTime DateOfBirth {get;set;}
+    public DateTime? DateOfBirth {get;set;}
+    [Column("weight")]
+    public double Weight {get;set;}
+    [Column("happy")]
+    public bool IsHappy {get;set;}
 }
 ```
 

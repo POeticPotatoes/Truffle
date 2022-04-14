@@ -7,7 +7,7 @@ namespace Success.Model
     /// </summary>
     [AttributeUsage( AttributeTargets.Property )]
     public class ColumnAttribute : Attribute {
-        public string Name {get;set;}
+        public string Name {get;}
 
         /// <summary>
         /// Flags an object property as a column in a database
@@ -31,7 +31,7 @@ namespace Success.Model
     [AttributeUsage( AttributeTargets.Class )]
     public class TableAttribute : Attribute 
     {
-        public string Name {get;set;}
+        public string Name {get;}
 
 
         /// <summary>
