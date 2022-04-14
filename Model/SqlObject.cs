@@ -330,8 +330,7 @@ namespace Truffle.Model
                 } catch (Exception e)
                 {
                     Console.WriteLine(e.StackTrace);
-                    var message = e.Message == null?"no message": e.Message;
-                    throw new InvalidDataException($"For property {p.Name}: {message}");
+                    throw new InvalidDataException($"For property {p.Name}: {e.Message}");
                 }
             }
         }

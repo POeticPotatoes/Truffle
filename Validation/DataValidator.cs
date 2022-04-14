@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Truffle.Model;
 
@@ -10,7 +11,7 @@ namespace Truffle.Validation
     [AttributeUsage( AttributeTargets.Property )]
     public abstract class DataValidatorAttribute: Attribute 
     {
-        private string Message{get;set;}
+        private string message{get;set;}
 
         /// <summary>
         /// Validates a value by performing checks on it
@@ -25,7 +26,8 @@ namespace Truffle.Validation
         /// </summary>
         public string GetMessage()
         {
-            return this.Message;
+            if (message != null) return message;
+            return "Data was not valid";
         }
 
         /// <summary>
@@ -33,7 +35,7 @@ namespace Truffle.Validation
         /// </summary>
         public void SetMessage(string m)
         {
-            this.Message = m;
+            this.message = m;
         }
     }
 
@@ -142,6 +144,25 @@ namespace Truffle.Validation
             if (obj == null) return true;
             if (expression.Match((string) obj).Success) return true;
             this.SetMessage($"'{obj}' did not match the regular expression '{expression}'");
+            return false;
+        }
+    }
+
+    public class MatchStringAttribute: DataValidatorAttribute
+    {
+        private readonly string[] valid;
+
+        public MatchStringAttribute(params string[] valid) 
+        {
+            this.valid = valid;
+        }
+
+        public override bool Validate(object value, SqlObject model)
+        {
+            if (value == null) return true;
+            foreach (var str in valid)
+                if (str.Equals(value)) return true;
+            this.SetMessage($"{value} was not a valid string. Accepted values are {String.Join(", ",valid)}");
             return false;
         }
     }
