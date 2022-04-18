@@ -41,7 +41,7 @@ namespace Trufle.Procedures
         /// <param name="value">The value of the column</param>
         public virtual void Set(string column, object value)
         {
-            fields[column] = Parse(value);
+            fields[column] = SqlUtils.Parse(value);
         }
 
         /// <summary>
@@ -63,17 +63,6 @@ namespace Trufle.Procedures
         protected Dictionary<string, string> GetFields()
         {
             return fields;
-        }
-
-        /// <summary>
-        /// Parses an object into a compatible format for a subsequent Sql query.
-        /// By default, this relies on the SqlUtils.Parse() method.
-        /// </summary>
-        /// <param name="o">The object to be parsed</param>
-        /// <returns>The formatted string</returns>
-        protected string Parse(object o)
-        {
-            return SqlUtils.Parse(o);
         }
     }
 }

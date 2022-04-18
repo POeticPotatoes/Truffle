@@ -25,6 +25,7 @@ This library was written by POeticPotatoes, who created it in the process of bui
         - [GenericSqlObject](#using-genericsqlobject)
     - Retrieving and modifying data
         - [Selecting](#selecting-from-a-table)
+        - [Conditionals](#chaining-sqlselectors)
         - [Updating](#updating-a-table)
         - [Updating with custom parameters](#updating-with-sqlselector)
         - [Inserting](#inserting-to-a-table)
@@ -168,6 +169,7 @@ SqlSelector --> DatabaseConnector
     - [GenericSqlObject](#using-genericsqlobject)
 - Retrieving and modifying data
     - [Selecting](#selecting-from-a-table)
+    - [Conditionals](#chaining-sqlselectors)
     - [Updating](#updating-a-table)
     - [Updating with custom parameters](#updating-with-sqlselector)
     - [Inserting](#inserting-to-a-table)
@@ -512,6 +514,12 @@ selector.Set("breed", "Golden Retriever");
 int[] ages = {3,5};
 selector.Set("age", ages);
 
+// Select multiple parameters at once by passing in a dictionary
+var values = new Dictionary<string, object>();
+values.Add("owner", "mark");
+values.Add("weight", new int[] {10, 15})
+selector.SetAll(values);
+
 // Get the string from the selector that returns columns name and owner
 string cmd = selector.BuildSelect("[dbo].[tblDog]", "name, owner");
 var result = database.RunCommand(cmd);
@@ -528,13 +536,41 @@ var selector = new SqlSelector();
 selector.Set("breed", "Golden Retriever");
 
 // Select rows where age is between 3 and 5
+// SetBetween() is a method with similar function
 int[] ages = {3,5};
 selector.Set("age", ages);
+
+// Select rows where owner contains a string "hard", such as "richard" or "hardy"
+selector.setLike("owner", "hard");
 
 // Parse all the results into a list of SqlObjects
 // This method requires the instantiated class to have a constructor that takes no arguments.
 List<Dog> result = await selector.BuildObjects<Dog>(database);
 ```
+
+## Chaining SqlSelectors
+For more advanced select queries that may require nested OR/AND conditionals, SqlSelectors can be chained to combine their select strings:
+
+```C#
+// A selector that looks for dogs in an age and weight range
+var sizeSelector = new SqlSelector()
+    .Set("age", 3)
+    .SetBetween(10, 15, "weight");
+
+// A selector that looks for dogs owned by richard
+var richardSelector = new SqlSelector()
+    .Set("owner", "richard");
+
+// A selector that looks for dogs owned by ben
+var benSelector = new SqlSelector()
+    .Set("owner", "ben");
+
+// Combine the selectors to select dogs owned by richard or ben with a certain weight and age
+sizeSelector.And(richardSelector.Or(benSelector));
+
+return sizeSelector;
+```
+
 
 ## Updating a table
 Truffle provides an `SqlUpdater` class which provides flexible formats to update a table:
@@ -740,6 +776,6 @@ In addition to methods mentioned in this README, Truffle also provides asynchron
 * Truffle is still under heavy development and all of its classes are still subject to change.
 * Truffle was created as a result of my work as  a backend software developer, and still lacks many functions (which will be added when I need them).
 * While case sensitivity for inserts and selects are not an issue for Truffle, it must be strictly adhered to when using `PartialSqlObject` as it may cause unpredictable behaviour.
-* Planned additions (besides the obvious DELETE function) include allowing the `SqlSelector` class to select optional parameters with `OR`, as well as an `SqlObjectBuilder` that would allow for even more flexible creation of SqlObjects.
+* Planned additions (besides the obvious DELETE function) include an `SqlObjectBuilder` that would allow for even more flexible creation of SqlObjects.
 
 [Back to Top](#truffle-library)

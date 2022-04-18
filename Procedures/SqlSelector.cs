@@ -12,7 +12,7 @@ namespace Truffle.Procedures
     /// <summary>
     /// Provides utility in selecting values from a database.
     /// </summary>
-    public class SqlSelector : SqlEditor
+    public class SqlSelector
     {
         private StringBuilder builder = new StringBuilder("(");
 
@@ -107,43 +107,66 @@ namespace Truffle.Procedures
         /// <param name="a">The first value</param>
         /// <param name="b">The second value</param>
         /// <param name="column">The name of the column</param>
-        public void SetBetween(object a, object b, string column)
+        public SqlSelector SetBetween(object a, object b, string column)
         {
             object[] array = {a, b};
-            Set(column, array);
+            return Set(column, array);
         }
 
-        public void SetLike(string column, object value)
+        public SqlSelector SetLike(string column, object value)
         {
-            if (value == null) return;
+            if (value == null) return this;
             var addition = $"{column} LIKE '%{value}%'";
             if (builder.Length > 1) builder.Append(" and ");
             builder.Append(addition);
+            return this;
         }
 
-        public override void Set(string column, object value)
+        public SqlSelector Set(string column, object value)
         {
             var addition = $"{column}{SqlUtils.ParseSelector(value)}";
             if (builder.Length > 1) builder.Append(" and ");
             builder.Append(addition);
+            return this;
         }
 
-        public void Or(SqlSelector selector)
+        /// <summary>
+        /// Saves all keys and values from a Dictionary.
+        /// </summary>
+        /// <param name="toAdd">The Dictionary to add</param>
+        public SqlSelector SetAll(Dictionary<string, object> toAdd)
+        {
+            foreach (string column in toAdd.Keys)
+            {
+                Set(column, toAdd[column]);
+            }
+            return this;
+        }
+
+        public SqlSelector Or(SqlSelector selector)
         {
             if (builder.Length == 1) 
             {
                 builder = selector.GetBuilder();
-                return;
+                return this;
             }
             if (selector.GetBuilder().Length == 1)
-                return;
+                return this;
             builder = new StringBuilder($"({builder.ToString()}) OR {selector.BuildParameters()}");
+            return this;
         }
 
-        public void And(SqlSelector selector)
+        public SqlSelector And(SqlSelector selector)
         {
-            if (builder.Length == 1) builder = selector.GetBuilder();
+            if (builder.Length == 1) 
+            {
+                builder = selector.GetBuilder();
+                return this;
+            }
+            if (selector.GetBuilder().Length == 1)
+                return this;
             builder = new StringBuilder($"({builder.ToString()}) AND {selector.BuildParameters()}");
+            return this;
         }
 
         private StringBuilder GetBuilder()
