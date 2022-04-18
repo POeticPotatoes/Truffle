@@ -137,7 +137,7 @@ SqlObject <|-- PartialSqlObject
 PartialSqlObject <|-- GenericSqlObject
 SqlEditor <|-- SqlUpdater
 SqlEditor <|-- SqlInserter
-SqlEditor <|-- SqlSelector
+SqlUpdater *-- SqlSelector
 SqlUpdater --> DatabaseConnector
 SqlInserter --> DatabaseConnector
 SqlSelector --> DatabaseConnector
@@ -149,7 +149,8 @@ SqlSelector --> DatabaseConnector
 * `PartialSqlObject` is an extension of `SqlObject` that retrieves column values even if their corresponding properties are not present in the model. This is useful for large tables with many columns.
 * `GenericSqlObject` is a further extension of `PartialSqlObject` that removes the need for class extension or definition before it is used. This is useful for tables with unknown names or columns.
 * `SqlEditor` is an abstract class that provides methods to collect parameters into a `Dictionary` to perform subsequent SQL queries
-* `SqlInserter`, `SqlUpdater` and `SqlSelector` are all classes used for table modification that extend the `SqlEditor` class and respectively provide methods to insert update, and select data in an SQL table.
+* `SqlInserter`, `SqlUpdater` and classes used for table modification that extend the `SqlEditor` class and respectively provide methods to insert and update data in an SQL table.
+* `SqlSelector` is a class used to select objects in the database and return values. It may additionally be passed into `SqlUpdater` to facilitate flexible row selection during updating.
 
 
 ## Usage
