@@ -31,10 +31,7 @@ namespace Trufle.Procedures
             fields = new Dictionary<string, string>();
             Dictionary<string, object> values = o.GetAllValues();
             foreach (string column in values.Keys)
-            {
-                string result = Parse(values[column]);
-                fields.Add(column, result);
-            }
+                Set(column, values[column]);
         }
         
         /// <summary>
@@ -51,7 +48,7 @@ namespace Trufle.Procedures
         /// Saves all keys and values from a Dictionary.
         /// </summary>
         /// <param name="toAdd">The Dictionary to add</param>
-        public virtual void SetAll(Dictionary<string, object> toAdd)
+        public void SetAll(Dictionary<string, object> toAdd)
         {
             foreach (string column in toAdd.Keys)
             {
@@ -74,7 +71,7 @@ namespace Trufle.Procedures
         /// </summary>
         /// <param name="o">The object to be parsed</param>
         /// <returns>The formatted string</returns>
-        protected virtual string Parse(object o)
+        protected string Parse(object o)
         {
             return SqlUtils.Parse(o);
         }

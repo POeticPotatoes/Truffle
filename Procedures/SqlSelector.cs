@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Truffle.Utils;
 using System.Threading.Tasks;
 using Trufle.Procedures;
 using Truffle.Model;
 using Truffle.Database;
+using Truffle.Utils;
 
 namespace Truffle.Procedures
 {
@@ -14,6 +14,8 @@ namespace Truffle.Procedures
     /// </summary>
     public class SqlSelector : SqlEditor
     {
+        private StringBuilder builder = new StringBuilder("(");
+
         /// <summary>
         /// Builds a select string with values stored in this object.
         /// Values are used as select parameters and the generated string is of the following format:
@@ -38,17 +40,8 @@ namespace Truffle.Procedures
         /// <returns>The generated string</returns>
         public string BuildParameters()
         {
-            Dictionary<string, string> values = GetFields();
-            if (values.Count == 0) return null;
-
-            StringBuilder builder = new StringBuilder();
-            foreach (string key in values.Keys)
-            {
-                builder.Append(key);
-                builder.Append(values[key]);
-                builder.Append(" and ");
-            }
-            builder.Length -= 5;
+            if (builder.Length == 1) return null;
+            builder.Append(")");
             return builder.ToString();
         }
 
@@ -120,9 +113,42 @@ namespace Truffle.Procedures
             Set(column, array);
         }
 
-        protected override string Parse(object o)
+        public void SetLike(string column, object value)
         {
-            return SqlUtils.ParseSelector(o);
+            if (value == null) return;
+            var addition = $"{column} LIKE '%{value}%'";
+            if (builder.Length > 1) builder.Append(" and ");
+            builder.Append(addition);
+        }
+
+        public override void Set(string column, object value)
+        {
+            var addition = $"{column}{SqlUtils.ParseSelector(value)}";
+            if (builder.Length > 1) builder.Append(" and ");
+            builder.Append(addition);
+        }
+
+        public void Or(SqlSelector selector)
+        {
+            if (builder.Length == 1) 
+            {
+                builder = selector.GetBuilder();
+                return;
+            }
+            if (selector.GetBuilder().Length == 1)
+                return;
+            builder = new StringBuilder($"({builder.ToString()}) OR {selector.BuildParameters()}");
+        }
+
+        public void And(SqlSelector selector)
+        {
+            if (builder.Length == 1) builder = selector.GetBuilder();
+            builder = new StringBuilder($"({builder.ToString()}) AND {selector.BuildParameters()}");
+        }
+
+        private StringBuilder GetBuilder()
+        {
+            return this.builder;
         }
     }
 }
