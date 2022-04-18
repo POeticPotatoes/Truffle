@@ -59,11 +59,11 @@ namespace Truffle.Procedures
 
         /// <summary>
         /// Retrieves all entries from a database that fit the parameters stored as values in this object.
-        /// The entries are mapped to SqlObjects and returned as a List.
+        /// The table accessed is dependent on the SqlObject supplied.
+        /// The entries are mapped to the supplied Type and returned as a List.
         /// </summary>
-        /// <param name="o">The SqlObject that the entries should be mapped to</param>
         /// <param name="database">The database to use</param>
-        /// <returns>A List of all mapped SqlObjects</returns>
+        /// <returns>A List of all mapped objects</returns>
         public async Task<List<T>> BuildObjects<T> (DatabaseConnector database) where T : SqlObject 
         {
             Type t = typeof(T);
@@ -83,6 +83,14 @@ namespace Truffle.Procedures
             return ans;
         }
 
+        /// <summary>
+        /// Retrieves all entries from a database that fit the parameters stored as values in this object.
+        /// The table accessed is dependent on the SqlObject supplied.
+        /// The entries are mapped to SqlObjects and returned as a List.
+        /// </summary>
+        /// <param name="o">The SqlObject that the entries should be mapped to</param>
+        /// <param name="database">The database to use</param>
+        /// <returns>A List of all mapped SqlObjects</returns>
         public async Task<List<SqlObject>> BuildObjects (SqlObject o, DatabaseConnector database)
         {
             string query = BuildSelect(o);
@@ -112,7 +120,14 @@ namespace Truffle.Procedures
             return Set(column, array);
         }
 
-        public SqlSelector SetLike(string column, object value)
+        /// <summary>
+        /// Sets a selector for a string contained within values in a column.
+        /// All rows containing a similar substring to the value are returned.
+        /// </summary>
+        /// <param name="column"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public SqlSelector SetLike(string column, string value)
         {
             if (value == null) return this;
             var addition = $"{column} LIKE '%{value}%'";
@@ -121,6 +136,11 @@ namespace Truffle.Procedures
             return this;
         }
 
+        /// <summary>
+        /// Sets a selector for a key value pair corresponding to a column in a table.
+        /// </summary>
+        /// <param name="column">The name of the column</param>
+        /// <param name="value">The value of the column</param>
         public SqlSelector Set(string column, object value)
         {
             var addition = $"{column}{SqlUtils.ParseSelector(value)}";
@@ -142,6 +162,10 @@ namespace Truffle.Procedures
             return this;
         }
 
+        /// <summary>
+        /// Combines the parameters of two SqlSelectors with an OR conditional
+        /// </summary>
+        /// <param name="selector">The selector to combine with</param>
         public SqlSelector Or(SqlSelector selector)
         {
             if (builder.Length == 1) 
@@ -155,6 +179,10 @@ namespace Truffle.Procedures
             return this;
         }
 
+        /// <summary>
+        /// Combines the parameters of two SqlSelectors with an AND conditional
+        /// </summary>
+        /// <param name="selector">The selector to combine with</param>
         public SqlSelector And(SqlSelector selector)
         {
             if (builder.Length == 1) 
