@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Truffle.Database;
 using Truffle.Model;
+using Trufle.Procedures;
 
 namespace Truffle.Procedures
 {
@@ -21,7 +22,7 @@ namespace Truffle.Procedures
         /// A subsequent Insert() call would create a new entry in the database with values from the object.
         /// </summary>
         /// <param name="o">The SqlObject to be created</param>
-        public SqlInserter(SqlObject o) : base(o) {}
+        public SqlInserter(SqlObject o, bool validate=true) : base(o, validate) {}
 
         /// <summary>
         /// Inserts a new entry to the database in the given table, with values stored in this object.
@@ -37,6 +38,12 @@ namespace Truffle.Procedures
             return;
         }
 
+        /// <summary>
+        /// Inserts a new entry to the database in the given table asynchronously, with values stored in this object.
+        /// If no values are present, no entry is created.
+        /// </summary>
+        /// <param name="table">The table to be inserted to</param>
+        /// <param name="database">The database to use</param>
         public async Task InsertAsync(string table, DatabaseConnector database)
         {
             string command = BuildCommand(table);

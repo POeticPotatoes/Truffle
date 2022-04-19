@@ -1,17 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Truffle.Database;
-using Truffle.Model;
 using System.Threading.Tasks;
+using Truffle.Model;
+using Truffle.Database;
+using Truffle.Utils;
 
 namespace Truffle.Procedures
 {
     /// <summary>
     /// Provides utility in selecting values from a database.
     /// </summary>
-    public class SqlSelector : SqlEditor
+    public class SqlSelector
     {
+        private StringBuilder builder = new StringBuilder("(");
+
         /// <summary>
         /// Builds a select string with values stored in this object.
         /// Values are used as select parameters and the generated string is of the following format:
@@ -36,17 +39,8 @@ namespace Truffle.Procedures
         /// <returns>The generated string</returns>
         public string BuildParameters()
         {
-            Dictionary<string, string> values = GetFields();
-            if (values.Count == 0) return null;
-
-            StringBuilder builder = new StringBuilder();
-            foreach (string key in values.Keys)
-            {
-                builder.Append(key);
-                builder.Append(values[key]);
-                builder.Append(" and ");
-            }
-            builder.Length -= 5;
+            if (builder.Length == 1) return null;
+            builder.Append(")");
             return builder.ToString();
         }
 
@@ -65,10 +59,11 @@ namespace Truffle.Procedures
 
         /// <summary>
         /// Retrieves all entries from a database that fit the parameters stored as values in this object.
-        /// The entries are mapped to SqlObjects of the supplied type and returned as a List.
+        /// The table accessed is dependent on the SqlObject supplied.
+        /// The entries are mapped to the supplied Type and returned as a List.
         /// </summary>
         /// <param name="database">The database to use</param>
-        /// <returns>A List of all mapped SqlObjects</returns>
+        /// <returns>A List of all mapped objects</returns>
         public async Task<List<T>> BuildObjects<T> (DatabaseConnector database) where T : SqlObject 
         {
             Type t = typeof(T);
@@ -89,20 +84,121 @@ namespace Truffle.Procedures
         }
 
         /// <summary>
+        /// Retrieves all entries from a database that fit the parameters stored as values in this object.
+        /// The table accessed is dependent on the SqlObject supplied.
+        /// The entries are mapped to SqlObjects and returned as a List.
+        /// </summary>
+        /// <param name="o">The SqlObject that the entries should be mapped to</param>
+        /// <param name="database">The database to use</param>
+        /// <returns>A List of all mapped SqlObjects</returns>
+        public async Task<List<SqlObject>> BuildObjects (SqlObject o, DatabaseConnector database)
+        {
+            string query = BuildSelect(o);
+
+            var results = (List<Dictionary<string, object>>) await database.RunCommandAsync(query, complex: true);
+            var ans = new List<SqlObject>();
+
+            foreach (Dictionary<string, object> dict in results)
+            {
+                var instance = (SqlObject) Activator.CreateInstance(o.GetType());
+                instance.LoadValues(dict);
+                ans.Add(instance);
+            }
+            
+            return ans;
+        }
+
+        /// <summary>
         /// Sets a selector for a range of values (eg. between certain dates) corresponding to a column in a table.
         /// </summary>
         /// <param name="a">The first value</param>
         /// <param name="b">The second value</param>
         /// <param name="column">The name of the column</param>
-        public void SetBetween(object a, object b, string column)
+        public SqlSelector SetBetween(object a, object b, string column)
         {
             object[] array = {a, b};
-            Set(column, array);
+            return Set(column, array);
         }
 
-        protected override string Parse(object o)
+        /// <summary>
+        /// Sets a selector for a string contained within values in a column.
+        /// All rows containing a similar substring to the value are returned.
+        /// </summary>
+        /// <param name="column"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public SqlSelector SetLike(string column, string value)
         {
-            return SqlUtils.ParseSelector(o);
+            if (value == null) return this;
+            var addition = $"{column} LIKE '%{value}%'";
+            if (builder.Length > 1) builder.Append(" and ");
+            builder.Append(addition);
+            return this;
+        }
+
+        /// <summary>
+        /// Sets a selector for a key value pair corresponding to a column in a table.
+        /// </summary>
+        /// <param name="column">The name of the column</param>
+        /// <param name="value">The value of the column</param>
+        public SqlSelector Set(string column, object value)
+        {
+            var addition = $"{column}{SqlUtils.ParseSelector(value)}";
+            if (builder.Length > 1) builder.Append(") and (");
+            builder.Append(addition);
+            return this;
+        }
+
+        /// <summary>
+        /// Saves all keys and values from a Dictionary.
+        /// </summary>
+        /// <param name="toAdd">The Dictionary to add</param>
+        public SqlSelector SetAll(Dictionary<string, object> toAdd)
+        {
+            foreach (string column in toAdd.Keys)
+            {
+                Set(column, toAdd[column]);
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// Combines the parameters of two SqlSelectors with an OR conditional
+        /// </summary>
+        /// <param name="selector">The selector to combine with</param>
+        public SqlSelector Or(SqlSelector selector)
+        {
+            if (builder.Length == 1) 
+            {
+                builder = selector.GetBuilder();
+                return this;
+            }
+            if (selector.GetBuilder().Length == 1)
+                return this;
+            builder = new StringBuilder($"({builder.ToString()}) OR {selector.BuildParameters()}");
+            return this;
+        }
+
+        /// <summary>
+        /// Combines the parameters of two SqlSelectors with an AND conditional
+        /// </summary>
+        /// <param name="selector">The selector to combine with</param>
+        public SqlSelector And(SqlSelector selector)
+        {
+            if (builder.Length == 1) 
+            {
+                builder = selector.GetBuilder();
+                return this;
+            }
+            if (selector.GetBuilder().Length == 1)
+                return this;
+            builder = new StringBuilder($"({builder.ToString()}) AND {selector.BuildParameters()}");
+            return this;
+        }
+
+        private StringBuilder GetBuilder()
+        {
+            return this.builder;
         }
     }
 }

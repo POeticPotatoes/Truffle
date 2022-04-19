@@ -42,22 +42,14 @@ namespace Truffle.Database
         /// <param name="complex">If set to true, returns a List(Dictionary(string, object))</param>
         public object RunCommand(string text, bool isProcedure=false, object[] values = null, bool complex=false) 
         {
-            try {
-                using (var cmd = BuildSqlCommand(text, isProcedure, values))
-                {
-                    // Execute the command
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        if (complex) return DataCollector.ReadComplexValues(reader);
-                        return DataCollector.ReadValues(reader);
-                    }
-                }
-            } catch (Exception e)
+            using (var cmd = BuildSqlCommand(text, isProcedure, values))
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-
-                return null;
+                // Execute the command
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (complex) return DataCollector.ReadComplexValues(reader);
+                    return DataCollector.ReadValues(reader);
+                }
             }
         }
 
@@ -72,22 +64,14 @@ namespace Truffle.Database
         /// <param name="complex">If set to true, returns a List(Dictionary(string, object))</param>
         public async Task<object> RunCommandAsync(string text, bool isProcedure=false, object[] values = null, bool complex=false) 
         {
-            try {
-                using (var cmd = BuildSqlCommand(text, isProcedure, values))
-                {
-                    // Execute the command
-                    using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
-                    {
-                        if (complex) return DataCollector.ReadComplexValues(reader);
-                        return DataCollector.ReadValues(reader);
-                    }
-                }
-            } catch (Exception e)
+            using (var cmd = BuildSqlCommand(text, isProcedure, values))
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-
-                return null;
+                // Execute the command
+                using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (complex) return DataCollector.ReadComplexValues(reader);
+                    return DataCollector.ReadValues(reader);
+                }
             }
         }
 

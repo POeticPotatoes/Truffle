@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Truffle.Database;
 using Truffle.Procedures;
+using Truffle.Utils;
 using Truffle.Validation;
 
 namespace Truffle.Model
@@ -31,12 +32,7 @@ namespace Truffle.Model
         /// <param name="database">The database to connect to</param>
         public SqlObject(object value, DatabaseConnector database)
         {
-            string req = BuildRequest(value, GetId());
-
-            var response = (List<Dictionary<string, object>>) database.RunCommand(req, complex:true);
-            if (response.Count == 0) throw new KeyNotFoundException($"{value} was not present in the database");
-
-            LoadValues(response[0]);
+            initFromDatabase(value, GetId(), database);
         }
 
         /// <summary>
@@ -49,6 +45,11 @@ namespace Truffle.Model
         /// <param name="column">The name of the column</param>
         /// <param name="database">The database to connect to</param>
         public SqlObject(object value, string column, DatabaseConnector database)
+        {
+            initFromDatabase(value, column, database);
+        }
+
+        protected void initFromDatabase(object value, string column, DatabaseConnector database)
         {
             string req = BuildRequest(value, column);
 
@@ -81,12 +82,11 @@ namespace Truffle.Model
         /// Returns the name of the Id column for the object. If no column has been marked with the id annotation, this returns null.
         /// </summary>
         /// <returns>The name of the Id column</returns>
-        public string GetId()
+        public virtual string GetId()
         {
             foreach (var p in GetColumns<IdAttribute> ())
             {
                 var column = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
-                Console.WriteLine(column.Name);
                 return column.Name;
             }
             
@@ -97,7 +97,7 @@ namespace Truffle.Model
         /// Returns the value of the table annotation for this object.
         /// </summary>
         /// <returns>The value of the table annotation</returns>
-        public string GetTable()
+        public virtual string GetTable()
         {
             var table = (TableAttribute) this.GetType().GetCustomAttribute(typeof(TableAttribute));
             return table.Name;
@@ -218,7 +218,7 @@ namespace Truffle.Model
         /// Loads a Dictionary of values into the object. Keys with corresponding column values are mapped and stored.
         /// </summary>
         /// <param name="values"></param>
-        public void LoadValues(Dictionary<string, object> values)
+        public virtual void LoadValues(Dictionary<string, object> values)
         {
             foreach (PropertyInfo p in this.GetType().GetProperties())
             {
@@ -242,7 +242,7 @@ namespace Truffle.Model
                     }
                     p.SetValue(this, value);
                 } catch (Exception e)
-                {Console.WriteLine(e.Message); Console.WriteLine(e.StackTrace);}
+                {Console.WriteLine($"For property {p} of column {attribute.Name}: "); Console.WriteLine(e.Message); Console.WriteLine(e.StackTrace);}
             }
         }
 
@@ -277,6 +277,10 @@ namespace Truffle.Model
             return $"SELECT {BuildColumnSelector()} FROM {GetTable()} WHERE {column}={val}";
         }
 
+        /// <summary>
+        /// Parses all columns with provided DataCleaners and sets their values to the result. 
+        /// This method is called by default during Create() and Update() and may be turned off by setting validate:false
+        /// </summary>
         public void Clean()
         {
 
@@ -294,12 +298,17 @@ namespace Truffle.Model
                     }
                 } catch (Exception e)
                 {
-                    throw new InvalidDataException($"For field '{p.Name}': {e.Message}");
+                    Console.WriteLine(e.StackTrace);
+                    throw new InvalidDataException($"For property {p}: {e.Message}");
                 }
             }
             
         }
 
+        /// <summary>
+        /// Checks all columns against provided DataValidators and returns if the validation passed.
+        /// This method is called by default during Create() and Update() and may be turned off by setting validate:false
+        /// </summary>
         public void Validate()
         {
             foreach (var p in GetColumns<ColumnAttribute> ())
@@ -319,7 +328,8 @@ namespace Truffle.Model
                     }
                 } catch (Exception e)
                 {
-                    throw new InvalidDataException($"For field '{p.Name}': {e.Message}");
+                    Console.WriteLine(e.StackTrace);
+                    throw new InvalidDataException($"For property {p.Name}: {e.Message}");
                 }
             }
         }

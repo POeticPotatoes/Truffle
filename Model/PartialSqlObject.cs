@@ -1,20 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Success.Utils;
 using Truffle.Database;
+using Truffle.Utils;
 
 namespace Truffle.Model
 {
     /// <summary>
-    /// <para> An extension of the SqlObject class that stores all columns from a table on top of the defined columns, and provides methods
-    /// for accessing and reading them. This class should be extended by models where column names might be dynamic or data does not need to be read locally.</para>
-    /// 
-    /// <para> This class can be instantiated, and stores all values as generic column data that can be accessed with GetAllValues(). </para>
+    /// An extension of SqlObject that stores all columns from a table on top of the defined columns, and provides methods
+    /// for accessing and reading them. This class should be extended by models where column names might be dynamic or data does not need to be read locally.
     /// </summary>
-    public class PartialSqlObject : SqlObject
+    public abstract class PartialSqlObject : SqlObject
     {
-        private Dictionary<string, object> Data = new Dictionary<string, object>();
+        private Dictionary<string, object> data = new Dictionary<string, object>();
 
         /// <summary>
         /// Initialises an empty instance of a PartialSqlObject
@@ -27,7 +25,7 @@ namespace Truffle.Model
         /// <param name="values">The values to be stored and accessed in the PartialSqlObject</param>
         public PartialSqlObject(Dictionary<string, object> values): base(values)
         {
-            Data = values;
+            data = values;
         }
 
         /// <summary>
@@ -46,7 +44,6 @@ namespace Truffle.Model
             if (response.Count == 0) throw new KeyNotFoundException($"{value} was not present in the database");
 
             LoadValues(response[0]);
-            Data  = response[0];
         }
 
         /// <summary>
@@ -66,7 +63,12 @@ namespace Truffle.Model
             if (response.Count == 0) throw new KeyNotFoundException($"{column} of value {SqlUtils.Parse(value)} was not present in the database");
 
             LoadValues(response[0]);
-            Data  = response[0];
+        }
+
+        public override void LoadValues(Dictionary<string, object> values)
+        {
+            base.LoadValues(values);
+            data = values;
         }
 
         /// <summary>
@@ -76,16 +78,18 @@ namespace Truffle.Model
         /// <returns>The value of the column, or null if it isn't present.</returns>
         public object GetValue(string column) 
         {
-            if (!Data.ContainsKey(column)) return null;
-            var o = Data[column];
+            var p = this.GetType().GetProperty(column);
+            if (p != null) data[column] = p.GetValue(this);
+            if (!data.ContainsKey(column)) return null;
+            var o = data[column];
             if (typeof(System.DBNull).IsInstanceOfType(o)) return null;
             return o;
         }
 
         public void SetValue(string column, object o) 
         {
-            if (!Data.ContainsKey(column)) return;
-            Data[column] = o;
+            if (!data.ContainsKey(column)) return;
+            data[column] = o;
         }
 
         public override Dictionary<string, object> GetAllValues()
@@ -95,10 +99,10 @@ namespace Truffle.Model
                 var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
                 if (attribute == null) continue;
 
-                Data[attribute.Name] =  p.GetValue(this);
+                data[attribute.Name] =  p.GetValue(this);
             }
 
-            return Data;
+            return data;
         }
 
         /// <summary>

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Success.Utils;
 using Truffle.Model;
+using Truffle.Utils;
 
-namespace Truffle.Procedures
+namespace Trufle.Procedures
 {
     /// <summary>
     /// An abstract class that provides methods to store key value pairs for subsequent actions to an Sql database.
@@ -21,17 +21,17 @@ namespace Truffle.Procedures
         /// All values from the object are stored and can be retrieved later.
         /// </summary>
         /// <param name="o">The SqlObject</param>
-        public SqlEditor(SqlObject o)
+        public SqlEditor(SqlObject o, bool validate=true)
         {
-            o.Clean();
-            o.Validate();
+            if (validate)
+            {
+                o.Clean();
+                o.Validate();
+            }
             fields = new Dictionary<string, string>();
             Dictionary<string, object> values = o.GetAllValues();
             foreach (string column in values.Keys)
-            {
-                string result = Parse(values[column]);
-                fields.Add(column, result);
-            }
+                Set(column, values[column]);
         }
         
         /// <summary>
@@ -41,14 +41,14 @@ namespace Truffle.Procedures
         /// <param name="value">The value of the column</param>
         public virtual void Set(string column, object value)
         {
-            fields[column] = Parse(value);
+            fields[column] = SqlUtils.Parse(value);
         }
 
         /// <summary>
         /// Saves all keys and values from a Dictionary.
         /// </summary>
         /// <param name="toAdd">The Dictionary to add</param>
-        public virtual void SetAll(Dictionary<string, object> toAdd)
+        public void SetAll(Dictionary<string, object> toAdd)
         {
             foreach (string column in toAdd.Keys)
             {
@@ -63,17 +63,6 @@ namespace Truffle.Procedures
         protected Dictionary<string, string> GetFields()
         {
             return fields;
-        }
-
-        /// <summary>
-        /// Parses an object into a compatible format for a subsequent Sql query.
-        /// By default, this relies on the SqlUtils.Parse() method.
-        /// </summary>
-        /// <param name="o">The object to be parsed</param>
-        /// <returns>The formatted string</returns>
-        protected virtual string Parse(object o)
-        {
-            return SqlUtils.Parse(o);
         }
     }
 }
