@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
-using Success.Utils;
 using Truffle.Database;
 using Truffle.Procedures;
 using Truffle.Validation;

@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json.Linq;
 
-namespace Success.Utils
+namespace Truffle.Utils
 {
     /// <summary>
     /// Provides static methods for parsing objects into Sql compatible formats

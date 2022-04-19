@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Success.Utils;
 using Truffle.Database;
 using Truffle.Model;
 using System.Threading.Tasks;
@@ -66,9 +65,8 @@ namespace Truffle.Procedures
 
         /// <summary>
         /// Retrieves all entries from a database that fit the parameters stored as values in this object.
-        /// The entries are mapped to SqlObjects and returned as a List.
+        /// The entries are mapped to SqlObjects of the supplied type and returned as a List.
         /// </summary>
-        /// <param name="o">The SqlObject that the entries should be mapped to</param>
         /// <param name="database">The database to use</param>
         /// <returns>A List of all mapped SqlObjects</returns>
         public async Task<List<T>> BuildObjects<T> (DatabaseConnector database) where T : SqlObject 
