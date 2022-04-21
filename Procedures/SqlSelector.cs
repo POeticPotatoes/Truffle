@@ -183,7 +183,7 @@ namespace Truffle.Procedures
             }
             if (selector.GetBuilder().Length == 1)
                 return this;
-            builder = new StringBuilder($"(({this.BuildParameters} OR {selector.BuildParameters()})");
+            builder = new StringBuilder($"(({this.BuildParameters()} OR {selector.BuildParameters()})");
             return this;
         }
 

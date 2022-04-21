@@ -12,7 +12,7 @@ namespace Truffle.Database
     /// </summary>
     public class DatabaseConnector : IDisposable
     {
-        private static bool _verbose;
+        private static bool _verbose = false;
         private readonly SqlConnection connection;
 
         /// <summary>
