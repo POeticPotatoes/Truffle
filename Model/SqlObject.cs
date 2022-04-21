@@ -93,6 +93,16 @@ namespace Truffle.Model
             return null;
         }
 
+        public virtual object GetIdValue()
+        {
+            foreach (var p in GetColumns<IdAttribute> ())
+            {
+                return p.GetValue(this);
+            }
+            
+            return null;
+        }
+
         /// <summary>
         /// Returns the value of the table annotation for this object.
         /// </summary>
@@ -293,7 +303,7 @@ namespace Truffle.Model
                         if (typeof(DataCleanerAttribute).IsInstanceOfType(a))
                         {
                             var val = p.GetValue(this);
-                            p.SetValue(this, ((DataCleanerAttribute)a).Clean(val, this));
+                            p.SetValue(this, ((DataCleanerAttribute)a).Clean(p.Name, val, this));
                         }
                     }
                 } catch (Exception e)
@@ -311,8 +321,10 @@ namespace Truffle.Model
         /// </summary>
         public void Validate()
         {
-            foreach (var p in GetColumns<ColumnAttribute> ())
+            foreach (PropertyInfo p in this.GetType().GetProperties())
             {
+                var c = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
+                if (c == null) continue;
                 try
                 {
                     foreach (var a in p.GetCustomAttributes())
@@ -321,7 +333,7 @@ namespace Truffle.Model
                         {
                             var val = p.GetValue(this);
                             var validator = (DataValidatorAttribute) a;
-                            if (validator.Validate(val, this)) continue;
+                            if (validator.Validate(c.Name, val, this)) continue;
 
                             throw new InvalidDataException(validator.GetMessage());
                         }

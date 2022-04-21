@@ -15,7 +15,7 @@ namespace Truffle.Validation
         /// <param name="value">The value to be parsed</param>
         /// <param name="model">The SqlObject being cleaned</param>
         /// <returns></returns>
-        public abstract object Clean(object value, SqlObject model);
+        public abstract object Clean(string name, object value, SqlObject model);
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ namespace Truffle.Validation
             places = i;
         }
 
-        public override object Clean(object value, SqlObject model)
+        public override object Clean(string name, object value, SqlObject model)
         {
             if (value == null) return null;
             var val = Convert.ToDouble(value);
@@ -46,7 +46,7 @@ namespace Truffle.Validation
     /// </summary>
     public class SimplifyStringAttribute: DataCleanerAttribute {
 
-        public override object Clean(object value, SqlObject model)
+        public override object Clean(string name, object value, SqlObject model)
         {
             if (value == null) return null;
             var str = (string) value;

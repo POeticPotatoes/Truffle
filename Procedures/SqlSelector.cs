@@ -40,8 +40,7 @@ namespace Truffle.Procedures
         public string BuildParameters()
         {
             if (builder.Length == 1) return null;
-            builder.Append(")");
-            return builder.ToString();
+            return builder.ToString() + ")";
         }
 
         /// <summary>
@@ -152,8 +151,9 @@ namespace Truffle.Procedures
         public SqlSelector Or(string column, object value)
         {
             var addition = $"{column}{SqlUtils.ParseSelector(value)}";
-            if (builder.Length > 1) builder.Append(") or (");
-            builder.Append(addition);
+            this.builder.Insert(0, "(");
+            if (builder.Length > 2) this.builder.Append(") or (");
+            this.builder.Append(addition + ")");
             return this;
         }
 
@@ -183,7 +183,7 @@ namespace Truffle.Procedures
             }
             if (selector.GetBuilder().Length == 1)
                 return this;
-            builder = new StringBuilder($"({builder.ToString()}) OR {selector.BuildParameters()}");
+            builder = new StringBuilder($"(({this.BuildParameters} OR {selector.BuildParameters()})");
             return this;
         }
 
@@ -200,7 +200,7 @@ namespace Truffle.Procedures
             }
             if (selector.GetBuilder().Length == 1)
                 return this;
-            builder = new StringBuilder($"({builder.ToString()}) AND ({selector.BuildParameters()})");
+            builder = new StringBuilder($"(({this.BuildParameters()} AND {selector.BuildParameters()})");
             return this;
         }
 
