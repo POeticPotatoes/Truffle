@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Truffle.Database;
 
@@ -11,6 +12,8 @@ namespace Truffle.Model
     {
         public string Id {get;set;}
         public string Table {get;set;}
+
+        public string[] Columns {get;set;}
 
         /// <summary>
         /// Initialises an empty instance of a GenericSqlObject
@@ -82,6 +85,12 @@ namespace Truffle.Model
         public override string GetTable()
         {
             return Table;
+        }
+
+        public override string BuildColumnSelector()
+        {
+            if (Columns == null || Columns.Length == 0) return "*";
+            return String.Join(',', Columns);
         }
     }
 }

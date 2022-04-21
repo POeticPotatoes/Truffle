@@ -144,7 +144,15 @@ namespace Truffle.Procedures
         public SqlSelector Set(string column, object value)
         {
             var addition = $"{column}{SqlUtils.ParseSelector(value)}";
-            if (builder.Length > 1) builder.Append(" and ");
+            if (builder.Length > 1) builder.Append(") and (");
+            builder.Append(addition);
+            return this;
+        }
+
+        public SqlSelector Or(string column, object value)
+        {
+            var addition = $"{column}{SqlUtils.ParseSelector(value)}";
+            if (builder.Length > 1) builder.Append(") or (");
             builder.Append(addition);
             return this;
         }
@@ -192,7 +200,7 @@ namespace Truffle.Procedures
             }
             if (selector.GetBuilder().Length == 1)
                 return this;
-            builder = new StringBuilder($"({builder.ToString()}) AND {selector.BuildParameters()}");
+            builder = new StringBuilder($"({builder.ToString()}) AND ({selector.BuildParameters()})");
             return this;
         }
 

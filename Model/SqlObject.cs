@@ -334,7 +334,7 @@ namespace Truffle.Model
             }
         }
 
-        private IEnumerable<PropertyInfo> GetColumns<T> () where T: Attribute
+        protected IEnumerable<PropertyInfo> GetColumns<T> () where T: Attribute
         {
             foreach (PropertyInfo p in this.GetType().GetProperties())
             {
