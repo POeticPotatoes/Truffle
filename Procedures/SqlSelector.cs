@@ -23,12 +23,14 @@ namespace Truffle.Procedures
         /// <param name="table">The table to select from</param>
         /// <param name="columns">The columns to select</param>
         /// <returns>The generated string</returns>
-        public string BuildSelect(string table, string columns)
+        public string BuildSelect(string table, string columns, int top=-1)
         {
-            string command = $"select {columns} from {table}";
+            var command = new StringBuilder("select ");
+            if (top != -1) command.Append($"top {top} "); 
+            command.Append($"{columns} from {table}");
 
             string parameters = BuildParameters();
-            if (parameters == null) return command;
+            if (parameters == null) return command.ToString();
 
             return $"{command} where {parameters}";
         }
@@ -40,8 +42,7 @@ namespace Truffle.Procedures
         public string BuildParameters()
         {
             if (builder.Length == 1) return null;
-            builder.Append(")");
-            return builder.ToString();
+            return builder.ToString() + ")";
         }
 
         /// <summary>
@@ -52,9 +53,9 @@ namespace Truffle.Procedures
         /// </summary>
         /// <param name="o">The SqlObject that provides column and table information</param>
         /// <returns>The generated string</returns>
-        public string BuildSelect(SqlObject o)
+        public string BuildSelect(SqlObject o, int top=-1)
         {
-            return BuildSelect(o.GetTable(), o.BuildColumnSelector());
+            return BuildSelect(o.GetTable(), o.BuildColumnSelector(), top);
         }
 
         /// <summary>
@@ -64,11 +65,11 @@ namespace Truffle.Procedures
         /// </summary>
         /// <param name="database">The database to use</param>
         /// <returns>A List of all mapped objects</returns>
-        public async Task<List<T>> BuildObjects<T> (DatabaseConnector database) where T : SqlObject 
+        public async Task<List<T>> BuildObjects<T> (DatabaseConnector database, int top=-1) where T : SqlObject 
         {
             Type t = typeof(T);
             T o = (T) Activator.CreateInstance(t);
-            string query = BuildSelect(o);
+            string query = BuildSelect(o, top);
 
             var results = (List<Dictionary<string, object>>) await database.RunCommandAsync(query, complex: true);
             var ans = new List<T>();
@@ -91,9 +92,9 @@ namespace Truffle.Procedures
         /// <param name="o">The SqlObject that the entries should be mapped to</param>
         /// <param name="database">The database to use</param>
         /// <returns>A List of all mapped SqlObjects</returns>
-        public async Task<List<SqlObject>> BuildObjects (SqlObject o, DatabaseConnector database)
+        public async Task<List<SqlObject>> BuildObjects (SqlObject o, DatabaseConnector database, int top=-1)
         {
-            string query = BuildSelect(o);
+            string query = BuildSelect(o, top);
 
             var results = (List<Dictionary<string, object>>) await database.RunCommandAsync(query, complex: true);
             var ans = new List<SqlObject>();
@@ -149,6 +150,15 @@ namespace Truffle.Procedures
             return this;
         }
 
+        public SqlSelector Or(string column, object value)
+        {
+            var addition = $"{column}{SqlUtils.ParseSelector(value)}";
+            this.builder.Insert(0, "(");
+            if (builder.Length > 2) this.builder.Append(") or (");
+            this.builder.Append(addition + ")");
+            return this;
+        }
+
         /// <summary>
         /// Saves all keys and values from a Dictionary.
         /// </summary>
@@ -175,7 +185,7 @@ namespace Truffle.Procedures
             }
             if (selector.GetBuilder().Length == 1)
                 return this;
-            builder = new StringBuilder($"({builder.ToString()}) OR {selector.BuildParameters()}");
+            builder = new StringBuilder($"(({this.BuildParameters()} OR {selector.BuildParameters()})");
             return this;
         }
 
@@ -192,7 +202,7 @@ namespace Truffle.Procedures
             }
             if (selector.GetBuilder().Length == 1)
                 return this;
-            builder = new StringBuilder($"({builder.ToString()}) AND {selector.BuildParameters()}");
+            builder = new StringBuilder($"(({this.BuildParameters()} AND {selector.BuildParameters()})");
             return this;
         }
 

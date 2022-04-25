@@ -18,7 +18,7 @@ namespace Truffle.Validation
         /// <param name="value">The value to be checked</param>
         /// <param name="model">The SqlObject being validated</param>
         /// <returns><Whether the validation passed/returns>
-        public abstract bool Validate(object value, SqlObject model);
+        public abstract bool Validate(string name, object value, SqlObject model);
 
         /// <summary>
         /// Returns any additional messages created during validation
@@ -43,7 +43,7 @@ namespace Truffle.Validation
     /// </summary>
     public class SimpleStringAttribute: DataValidatorAttribute 
     {
-        public override bool Validate(object value, SqlObject model)
+        public override bool Validate(string name, object value, SqlObject model)
         {
             if (value == null) return true;
             foreach(var c in (string) value)
@@ -74,7 +74,7 @@ namespace Truffle.Validation
             this.value = value;
         }
 
-        public override bool Validate(object value, SqlObject model)
+        public override bool Validate(string name, object value, SqlObject model)
         {
             if (value == null) return true;
             if (Convert.ToDouble(value) >= this.value) return true;
@@ -98,7 +98,7 @@ namespace Truffle.Validation
             this.value = value;
         }
 
-        public override bool Validate(object value, SqlObject model)
+        public override bool Validate(string name, object value, SqlObject model)
         {
             if (value == null) return true;
             if (Convert.ToDouble(value) <= this.value) return true;
@@ -112,7 +112,7 @@ namespace Truffle.Validation
     /// </summary>
     public class RequiredAttribute: DataValidatorAttribute 
     {
-        public override bool Validate(object value, SqlObject model)
+        public override bool Validate(string name, object value, SqlObject model)
         {
             if (value != null 
                 && (!typeof(string).IsInstanceOfType(value)
@@ -138,7 +138,7 @@ namespace Truffle.Validation
             this.expression = new Regex(str);
         }
 
-        public override bool Validate(object obj, SqlObject model)
+        public override bool Validate(string name, object obj, SqlObject model)
         {
             if (obj == null) return true;
             if (expression.Match((string) obj).Success) return true;
@@ -156,7 +156,7 @@ namespace Truffle.Validation
             this.valid = valid;
         }
 
-        public override bool Validate(object value, SqlObject model)
+        public override bool Validate(string name, object value, SqlObject model)
         {
             if (value == null) return true;
             foreach (var str in valid)

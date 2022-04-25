@@ -72,10 +72,10 @@ namespace Truffle.Model
         /// Builds a string that can be used to select all relevant columns and return all entries from a table.
         /// </summary>
         /// <returns>The generated string.</returns>
-        public virtual string BuildAllRequest() 
+        public virtual string BuildAllRequest(int top = -1) 
         {
-            
-            return $"SELECT {BuildColumnSelector()} FROM {GetTable()}";
+            string num = top==-1?"":$"TOP {top} ";
+            return $"SELECT {num}{BuildColumnSelector()} FROM {GetTable()}";
         }
 
         /// <summary>
@@ -88,6 +88,16 @@ namespace Truffle.Model
             {
                 var column = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
                 return column.Name;
+            }
+            
+            return null;
+        }
+
+        public virtual object GetIdValue()
+        {
+            foreach (var p in GetColumns<IdAttribute> ())
+            {
+                return p.GetValue(this);
             }
             
             return null;
@@ -293,7 +303,7 @@ namespace Truffle.Model
                         if (typeof(DataCleanerAttribute).IsInstanceOfType(a))
                         {
                             var val = p.GetValue(this);
-                            p.SetValue(this, ((DataCleanerAttribute)a).Clean(val, this));
+                            p.SetValue(this, ((DataCleanerAttribute)a).Clean(p.Name, val, this));
                         }
                     }
                 } catch (Exception e)
@@ -311,8 +321,10 @@ namespace Truffle.Model
         /// </summary>
         public void Validate()
         {
-            foreach (var p in GetColumns<ColumnAttribute> ())
+            foreach (PropertyInfo p in this.GetType().GetProperties())
             {
+                var c = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
+                if (c == null) continue;
                 try
                 {
                     foreach (var a in p.GetCustomAttributes())
@@ -321,7 +333,7 @@ namespace Truffle.Model
                         {
                             var val = p.GetValue(this);
                             var validator = (DataValidatorAttribute) a;
-                            if (validator.Validate(val, this)) continue;
+                            if (validator.Validate(c.Name, val, this)) continue;
 
                             throw new InvalidDataException(validator.GetMessage());
                         }
@@ -334,7 +346,7 @@ namespace Truffle.Model
             }
         }
 
-        private IEnumerable<PropertyInfo> GetColumns<T> () where T: Attribute
+        protected IEnumerable<PropertyInfo> GetColumns<T> () where T: Attribute
         {
             foreach (PropertyInfo p in this.GetType().GetProperties())
             {
