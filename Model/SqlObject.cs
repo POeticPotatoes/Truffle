@@ -72,10 +72,10 @@ namespace Truffle.Model
         /// Builds a string that can be used to select all relevant columns and return all entries from a table.
         /// </summary>
         /// <returns>The generated string.</returns>
-        public virtual string BuildAllRequest() 
+        public virtual string BuildAllRequest(int top = -1) 
         {
-            
-            return $"SELECT {BuildColumnSelector()} FROM {GetTable()}";
+            string num = top==-1?"":$"TOP {top} ";
+            return $"SELECT {num}{BuildColumnSelector()} FROM {GetTable()}";
         }
 
         /// <summary>

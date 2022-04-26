@@ -56,7 +56,7 @@ namespace Truffle.Model
         /// <param name="column">The name of the column</param>
         /// <param name="database">The database to connect to</param>
         public PartialSqlObject(object value, string column, DatabaseConnector database)
-        {
+        {  
             string req = BuildRequest(value, column);
 
             var response = (List<Dictionary<string, object>>) database.RunCommand(req, complex:true);

@@ -23,12 +23,15 @@ namespace Truffle.Procedures
         /// <param name="table">The table to select from</param>
         /// <param name="columns">The columns to select</param>
         /// <returns>The generated string</returns>
-        public string BuildSelect(string table, string columns)
+        public string BuildSelect(string table, string columns, int top=-1, bool distinct = false)
         {
-            string command = $"select {columns} from {table}";
+            var command = new StringBuilder("select ");
+            if (distinct) command.Append("distinct ");
+            if (top != -1) command.Append($"top {top} "); 
+            command.Append($"{columns} from {table}");
 
             string parameters = BuildParameters();
-            if (parameters == null) return command;
+            if (parameters == null) return command.ToString();
 
             return $"{command} where {parameters}";
         }
@@ -51,9 +54,9 @@ namespace Truffle.Procedures
         /// </summary>
         /// <param name="o">The SqlObject that provides column and table information</param>
         /// <returns>The generated string</returns>
-        public string BuildSelect(SqlObject o)
+        public string BuildSelect(SqlObject o, int top=-1, bool distinct = false)
         {
-            return BuildSelect(o.GetTable(), o.BuildColumnSelector());
+            return BuildSelect(o.GetTable(), o.BuildColumnSelector(), top, distinct);
         }
 
         /// <summary>
@@ -63,11 +66,11 @@ namespace Truffle.Procedures
         /// </summary>
         /// <param name="database">The database to use</param>
         /// <returns>A List of all mapped objects</returns>
-        public async Task<List<T>> BuildObjects<T> (DatabaseConnector database) where T : SqlObject 
+        public async Task<List<T>> BuildObjects<T> (DatabaseConnector database, int top=-1, bool distinct = false) where T : SqlObject 
         {
             Type t = typeof(T);
             T o = (T) Activator.CreateInstance(t);
-            string query = BuildSelect(o);
+            string query = BuildSelect(o, top, distinct);
 
             var results = (List<Dictionary<string, object>>) await database.RunCommandAsync(query, complex: true);
             var ans = new List<T>();
@@ -90,9 +93,9 @@ namespace Truffle.Procedures
         /// <param name="o">The SqlObject that the entries should be mapped to</param>
         /// <param name="database">The database to use</param>
         /// <returns>A List of all mapped SqlObjects</returns>
-        public async Task<List<SqlObject>> BuildObjects (SqlObject o, DatabaseConnector database)
+        public async Task<List<SqlObject>> BuildObjects (SqlObject o, DatabaseConnector database, int top=-1, bool distinct = false)
         {
-            string query = BuildSelect(o);
+            string query = BuildSelect(o, top, distinct);
 
             var results = (List<Dictionary<string, object>>) await database.RunCommandAsync(query, complex: true);
             var ans = new List<SqlObject>();
