@@ -4,6 +4,7 @@ using Truffle.Database;
 using Truffle.Model;
 using Truffle.Utils;
 using Trufle.Procedures;
+using System;
 
 namespace Truffle.Procedures
 {
@@ -34,7 +35,6 @@ namespace Truffle.Procedures
             string key = o.GetId();
             var raw = o.GetType().GetProperty(key).GetValue(o);
             string id = SqlUtils.Parse(raw);
-
             selector = $"{key}={id}";
         }
 
@@ -50,7 +50,7 @@ namespace Truffle.Procedures
 
         /// <summary>
         /// Updates a table in a database based on the changes registered in this object. Will not update the table if no changes have been registered using Set()
-        /// </summary>
+        /// </summary>if (value.GetType().Name == "Int64") 
         /// <param name="table">The table to be updated</param>
         /// <param name="database">The database to be updated</param>
         /// <returns>Whether the update to the table was successful</returns>

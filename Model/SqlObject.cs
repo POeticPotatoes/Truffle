@@ -240,15 +240,18 @@ namespace Truffle.Model
                     switch (value)
                     {
                     case (System.DBNull):
-                        p.SetValue(this, null);
-                        continue;
+                        value = null;
+                        break;
                     case (DateTime):
                         if (!typeof(string).IsInstanceOfType(value)) break;
-                        p.SetValue(this, SqlUtils.ParseDate(value));
-                        continue;
+                        value = SqlUtils.ParseDate(value);
+                        break;
                     case (decimal):
-                        p.SetValue(this, Decimal.ToDouble((decimal) value));
-                        continue;
+                        value = Decimal.ToDouble((decimal) value);
+                        break;
+                    case (Int64):
+                        value = Convert.ToInt32(value);
+                        break;
                     }
                     p.SetValue(this, value);
                 } catch (Exception e)
