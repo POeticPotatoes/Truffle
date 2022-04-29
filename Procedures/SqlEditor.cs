@@ -29,7 +29,7 @@ namespace Trufle.Procedures
                 o.Validate();
             }
             fields = new Dictionary<string, string>();
-            Dictionary<string, object> values = o.GetAllValues();
+            Dictionary<string, object> values = o.GetAllValues(ignoreIdentities: true);
             foreach (string column in values.Keys)
                 Set(column, values[column]);
         }

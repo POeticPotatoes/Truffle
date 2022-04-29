@@ -43,4 +43,7 @@ namespace Truffle.Model
             Name = name;
         }
     }
+
+    [AttributeUsage( AttributeTargets.Property)]
+    public class IdentityAttribute: Attribute {}
 }

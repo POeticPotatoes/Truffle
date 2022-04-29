@@ -92,18 +92,29 @@ namespace Truffle.Model
             data[column] = o;
         }
 
-        public override Dictionary<string, object> GetAllValues()
+        public override Dictionary<string, object> GetAllValues(bool ignoreIdentities=false)
         {
+            var ignore = new List<string>();
             foreach (PropertyInfo p in this.GetType().GetProperties())
             {
                 var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
                 if (attribute == null) continue;
+                
+                if (ignoreIdentities && p.GetCustomAttribute(typeof(IdentityAttribute)) != null)
+                    ignore.Add(attribute.Name);
 
                 var v = p.GetValue(this);
                 data[attribute.Name] =  p.GetValue(this);
             }
 
-            return data;
+            var ans = new Dictionary<string, object>();
+            foreach (var e in data)
+            {
+                if (ignoreIdentities && ignore.Contains(e.Key)) continue;
+                ans[e.Key] = e.Value;
+            }
+
+            return ans;
         }
 
         /// <summary>

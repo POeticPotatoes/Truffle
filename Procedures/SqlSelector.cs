@@ -41,6 +41,20 @@ namespace Truffle.Procedures
             return command.ToString();
         }
 
+        public string BuildDelete(string table, int top=-1, string orderby = null)
+        {
+            var command = new StringBuilder("delete ");
+            if (top != -1) command.Append($"top {top} ");
+            command.Append($"from {table}");
+
+            string parameters = BuildParameters();
+            if (parameters != null)
+                command.Append($" where {parameters}");
+            if (orderby != null)
+                command.Append($" order by {orderby}");
+            return command.ToString();
+        }
+
         /// <summary>
         /// Builds the select parameters with values stored in this object.
         /// </summary>
@@ -62,6 +76,11 @@ namespace Truffle.Procedures
         public string BuildSelect(SqlObject o, int top=-1, bool distinct = false, string orderby = null)
         {
             return BuildSelect(o.GetTable(), o.BuildColumnSelector(), top, distinct, orderby);
+        }
+
+        public string BuildDelete(SqlObject o, int top=-1, string orderby = null)
+        {
+            return BuildDelete(o.GetTable(), top, orderby);
         }
 
         /// <summary>
