@@ -100,7 +100,6 @@ namespace Truffle.Model
                 if (attribute == null) continue;
 
                 var v = p.GetValue(this);
-                if (v == null && !data.ContainsKey(attribute.Name)) continue;
                 data[attribute.Name] =  p.GetValue(this);
             }
 
