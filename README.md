@@ -26,6 +26,7 @@ This library was written by POeticPotatoes, who created it in the process of bui
     - Retrieving and modifying data
         - [Selecting](#selecting-from-a-table)
         - [Conditionals](#chaining-sqlselectors)
+        - [Deleting](#deleting-from-a-table)
         - [Updating](#updating-a-table)
         - [Updating with custom parameters](#updating-with-sqlselector)
         - [Inserting](#inserting-to-a-table)
@@ -171,6 +172,7 @@ SqlSelector --> DatabaseConnector
 - Retrieving and modifying data
     - [Selecting](#selecting-from-a-table)
     - [Conditionals](#chaining-sqlselectors)
+    - [Deleting](#deleting-from-a-table)
     - [Updating](#updating-a-table)
     - [Updating with custom parameters](#updating-with-sqlselector)
     - [Inserting](#inserting-to-a-table)
@@ -549,6 +551,15 @@ selector.setLike("owner", "hard");
 List<Dog> result = await selector.BuildObjects<Dog>(database);
 ```
 
+### Additional Options
+`SqlSelector` has several other optional arguments that can be set during the building of the SQL select string:
+* top: int - if set, only returns the first n results in the string
+* distinct: bool - whether only distinct values should be returned
+* orderBy: string - accepts a string to order the results by 
+  eg. orderby: "Owner ASC" would order results by "Owner" in ascending order
+
+Most of these arguments are modelled after their corresponding keywords in the SQL query, and should be intuitive to users of SQL.
+
 ## Chaining SqlSelectors
 For more advanced select queries that may require nested OR/AND conditionals, SqlSelectors can be chained to combine their select strings:
 
@@ -572,6 +583,26 @@ sizeSelector.And(richardSelector.Or(benSelector));
 return sizeSelector;
 ```
 
+
+## Deleting From a Database
+`SqlSelector` can be used to create delete queries when provided with similar parameters to `BuildSelect()`:
+
+```C#
+// Create an SQL selector
+SqlSelector selector = new SqlSelector();
+
+// Select rows where breed = "Golden Retriever"
+selector.Set("breed", "Golden Retriever");
+
+// Get the delete string from the selector
+string cmd = selector.BuildDelete("[dbo].[tblDog]", "name, owner");
+var result = database.RunCommand(cmd);
+}
+```
+
+
+## Chaining SqlSelectors
+For more advanced select queries that may require nested OR/AND conditionals, SqlSelectors can be chained to combine their select strings:
 
 ## Updating a table
 Truffle provides an `SqlUpdater` class which provides flexible formats to update a table:
