@@ -584,7 +584,7 @@ return sizeSelector;
 ```
 
 
-## Deleting From a Database
+## Deleting From a Table
 `SqlSelector` can be used to create delete queries when provided with similar parameters to `BuildSelect()`:
 
 ```C#
@@ -741,7 +741,7 @@ To write a custom validation, the `DataValidatorAttribute` or `DataCleanerAttrib
 // This validator only checks if a dog has an owner if its age is greater than 2
 public class IfAge: DataValidatorAttribute
 {
-    public override bool Validate(object value, SqlObject model)
+    public override bool Validate(string name, object value, SqlObject model)
     {
         var dog = (Dog model)
         if (dog.Age < 2 || value != null) return true;
@@ -758,7 +758,7 @@ public class StringDecimalsAttribute: DataCleanerAttribute
     {
         this.places = places;
     }
-    public override object Clean(object value, SqlObject model)
+    public override object Clean(string name, object value, SqlObject model)
     {
         if (value == null) return null;
         var str = value.ToString();
