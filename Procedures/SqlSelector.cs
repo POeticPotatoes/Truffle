@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Truffle.Model;
 using Truffle.Database;
 using Truffle.Utils;
+using System.Collections;
 
 namespace Truffle.Procedures
 {
@@ -120,7 +121,7 @@ namespace Truffle.Procedures
         /// <param name="o">The SqlObject that the entries should be mapped to</param>
         /// <param name="database">The database to use</param>
         /// <returns>A List of all mapped SqlObjects</returns>
-        public async Task<List<SqlObject>> BuildObjects (SqlObject o, 
+        public async Task<object> BuildObjects (SqlObject o, 
             DatabaseConnector database, 
             int top=-1, 
             bool distinct = false,
@@ -129,7 +130,8 @@ namespace Truffle.Procedures
             string query = BuildSelect(o, top, distinct, orderby);
 
             var results = (List<Dictionary<string, object>>) await database.RunCommandAsync(query, complex: true);
-            var ans = new List<SqlObject>();
+            var listType = typeof(List<>).MakeGenericType(new Type[] { o.GetType() });
+            IList ans = (IList)Activator.CreateInstance(listType);
 
             foreach (Dictionary<string, object> dict in results)
             {

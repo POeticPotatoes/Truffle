@@ -13,6 +13,7 @@ namespace Truffle.Model
     public abstract class PartialSqlObject : SqlObject
     {
         private Dictionary<string, object> data = new Dictionary<string, object>();
+        private Dictionary<string, PropertyInfo> map = new Dictionary<string, PropertyInfo>();
 
         /// <summary>
         /// Initialises an empty instance of a PartialSqlObject
@@ -23,10 +24,7 @@ namespace Truffle.Model
         /// Initialises a new instance of a PartialSqlObject with a Dictionary containing column values
         /// </summary>
         /// <param name="values">The values to be stored and accessed in the PartialSqlObject</param>
-        public PartialSqlObject(Dictionary<string, object> values): base(values)
-        {
-            data = values;
-        }
+        public PartialSqlObject(Dictionary<string, object> values): base(values) {}
 
         /// <summary>
         /// <para> Initialises a new instance of a PartialSqlObject with a value in the key column in a database.
@@ -36,15 +34,7 @@ namespace Truffle.Model
         /// </summary>
         /// <param name="value">The value of the key column</param>
         /// <param name="database">The database to connect to</param>
-        public PartialSqlObject(object value, DatabaseConnector database)
-        {
-            string req = BuildRequest(value, GetId());
-
-            var response = (List<Dictionary<string, object>>) database.RunCommand(req, complex:true);
-            if (response.Count == 0) throw new KeyNotFoundException($"{value} was not present in the database");
-
-            LoadValues(response[0]);
-        }
+        public PartialSqlObject(object value, DatabaseConnector database): base(value, database) {}
 
         /// <summary>
         /// <para> Initialises a new instance of a PartialSqlObject with a column and value pair in a database.
@@ -55,20 +45,20 @@ namespace Truffle.Model
         /// <param name="value">The value of the column</param>
         /// <param name="column">The name of the column</param>
         /// <param name="database">The database to connect to</param>
-        public PartialSqlObject(object value, string column, DatabaseConnector database)
-        {  
-            string req = BuildRequest(value, column);
-
-            var response = (List<Dictionary<string, object>>) database.RunCommand(req, complex:true);
-            if (response.Count == 0) throw new KeyNotFoundException($"{column} of value {SqlUtils.Parse(value)} was not present in the database");
-
-            LoadValues(response[0]);
-        }
+        public PartialSqlObject(object value, string column, DatabaseConnector database): base(value, column, database) {}
 
         public override void LoadValues(Dictionary<string, object> values)
         {
             base.LoadValues(values);
             data = values;
+
+            foreach (var p in this.GetType().GetProperties())
+            {
+                var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
+                if (attribute == null) continue;
+                
+                map.Add(attribute.Name, p);
+            }
         }
 
         /// <summary>
@@ -78,8 +68,8 @@ namespace Truffle.Model
         /// <returns>The value of the column, or null if it isn't present.</returns>
         public object GetValue(string column) 
         {
-            var p = this.GetType().GetProperty(column);
-            if (p != null) data[column] = p.GetValue(this);
+            if (map.ContainsKey(column))
+                data[column] = map[column].GetValue(this);
             if (!data.ContainsKey(column)) return null;
             var o = data[column];
             if (typeof(System.DBNull).IsInstanceOfType(o)) return null;
@@ -88,7 +78,8 @@ namespace Truffle.Model
 
         public void SetValue(string column, object o) 
         {
-            if (!data.ContainsKey(column)) return;
+            if (map.ContainsKey(column))
+                map[column].SetValue(this, o);
             data[column] = o;
         }
 
@@ -157,6 +148,12 @@ namespace Truffle.Model
         {
             object o = GetValue(column);
             return o==null?0:(int) o;
+        }
+
+        public double GetDouble(string column)
+        {
+            object o = GetValue(column);
+            return o==null?0:(double) o;
         }
 
         public override void LogValues()

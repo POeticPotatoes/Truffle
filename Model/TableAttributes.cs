@@ -6,7 +6,8 @@ namespace Truffle.Model
     /// Flags an object property as a column in a database
     /// </summary>
     [AttributeUsage( AttributeTargets.Property )]
-    public class ColumnAttribute : Attribute {
+    public class ColumnAttribute : Attribute 
+    {
         public string Name {get;}
 
         /// <summary>
