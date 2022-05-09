@@ -41,7 +41,8 @@ namespace Trufle.Procedures
         /// <param name="value">The value of the column</param>
         public virtual void Set(string column, object value)
         {
-            fields[column] = SqlUtils.Parse(value);
+            var name = $"[{column}]";
+            fields[name] = SqlUtils.Parse(value);
         }
 
         /// <summary>

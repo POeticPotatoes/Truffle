@@ -72,10 +72,11 @@ namespace Truffle.Model
         /// Builds a string that can be used to select all relevant columns and return all entries from a table.
         /// </summary>
         /// <returns>The generated string.</returns>
-        public virtual string BuildAllRequest(int top = -1) 
+        public string BuildAllRequest(int top = -1, string orderBy = null) 
         {
-            string num = top==-1?"":$"TOP {top} ";
-            return $"SELECT {num}{BuildColumnSelector()} FROM {GetTable()}";
+            string num = top==-1?"":$"TOP {top} ",
+                   order = orderBy == null?"": $" order by {orderBy}";
+            return $"SELECT {num}{BuildColumnSelector()} FROM {GetTable()}{order}";
         }
 
         /// <summary>
@@ -148,7 +149,7 @@ namespace Truffle.Model
         /// Creates a new entry in a database with values stored in this object.
         /// </summary>
         /// <param name="database">The database to create a new entry in</param>
-        public virtual void Create(DatabaseConnector database, bool validate=false) 
+        public virtual void Create(DatabaseConnector database, bool validate=true) 
         {
             if (validate)
             {
@@ -164,7 +165,7 @@ namespace Truffle.Model
         /// Creates a new entry in a database asynchronously with values stored in this object.
         /// </summary>
         /// <param name="database">The database to create a new entry in</param>
-        public virtual async Task CreateAsync(DatabaseConnector database, bool validate=false) 
+        public virtual async Task CreateAsync(DatabaseConnector database, bool validate=true) 
         {
             if (validate)
             {
@@ -179,7 +180,7 @@ namespace Truffle.Model
         /// Updates an existing entry in a database asynchronously with values stored in this object.
         /// </summary>
         /// <param name="database">The database to update</param>
-        public void Update(DatabaseConnector database, bool validate=false) 
+        public void Update(DatabaseConnector database, bool validate=true) 
         {
             if (validate)
             {
@@ -194,7 +195,7 @@ namespace Truffle.Model
         /// Updates an existing entry in a database with values stored in this object.
         /// </summary>
         /// <param name="database">The database to update</param>
-        public async Task UpdateAsync(DatabaseConnector database, bool validate=false) 
+        public async Task UpdateAsync(DatabaseConnector database, bool validate=true) 
         {
             if (validate)
             {
@@ -273,7 +274,7 @@ namespace Truffle.Model
                 var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
                 if (attribute == null) continue;
 
-                values.Add(attribute.Name);
+                values.Add($"[{attribute.Name}]");
             }
 
             return String.Join(",", values);

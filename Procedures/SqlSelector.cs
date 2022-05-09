@@ -165,7 +165,7 @@ namespace Truffle.Procedures
         public SqlSelector SetLike(string column, string value)
         {
             if (value == null) return this;
-            var addition = $"{column} LIKE '%{value}%'";
+            var addition = $"[{column}] LIKE '%{value}%'";
             if (builder.Length > 1) builder.Append(" and ");
             builder.Append(addition);
             return this;
@@ -178,7 +178,7 @@ namespace Truffle.Procedures
         /// <param name="value">The value of the column</param>
         public SqlSelector Set(string column, object value)
         {
-            var addition = $"{column}{SqlUtils.ParseSelector(value)}";
+            var addition = $"[{column}]{SqlUtils.ParseSelector(value)}";
             if (builder.Length > 1) builder.Append(") and (");
             builder.Append(addition);
             return this;
@@ -186,7 +186,7 @@ namespace Truffle.Procedures
 
         public SqlSelector Or(string column, object value)
         {
-            var addition = $"{column}{SqlUtils.ParseSelector(value)}";
+            var addition = $"[{column}]{SqlUtils.ParseSelector(value)}";
             this.builder.Insert(0, "(");
             if (builder.Length > 2) this.builder.Append(") or (");
             this.builder.Append(addition + ")");
