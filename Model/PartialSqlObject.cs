@@ -94,7 +94,6 @@ namespace Truffle.Model
                 if (ignoreIdentities && p.GetCustomAttribute(typeof(IdentityAttribute)) != null)
                     ignore.Add(attribute.Name);
 
-                var v = p.GetValue(this);
                 data[attribute.Name] =  p.GetValue(this);
             }
 
