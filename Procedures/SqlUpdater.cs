@@ -35,7 +35,7 @@ namespace Truffle.Procedures
             string key = o.GetId();
             var raw = o.GetType().GetProperty(key).GetValue(o);
             string id = SqlUtils.Parse(raw);
-            selector = $"{key}={id}";
+            selector = $"[{key}]={id}";
         }
 
         /// <summary>
