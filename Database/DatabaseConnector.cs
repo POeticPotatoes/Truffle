@@ -49,6 +49,7 @@ namespace Truffle.Database
         public object RunCommand(string text, bool isProcedure=false, object[] values = null, bool complex=false) 
         {
             if (_verbose) Console.WriteLine(text);
+            Console.WriteLine(text);
             using (var cmd = BuildSqlCommand(text, isProcedure, values))
             {
                 // Execute the command

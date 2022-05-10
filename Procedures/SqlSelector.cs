@@ -149,10 +149,10 @@ namespace Truffle.Procedures
         /// <param name="a">The first value</param>
         /// <param name="b">The second value</param>
         /// <param name="column">The name of the column</param>
-        public SqlSelector SetBetween(object a, object b, string column)
+        public SqlSelector SetBetween(object a, object b, string column, bool not=false)
         {
             object[] array = {a, b};
-            return Set(column, array);
+            return Set(column, array, not);
         }
 
         /// <summary>
@@ -162,11 +162,12 @@ namespace Truffle.Procedures
         /// <param name="column"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public SqlSelector SetLike(string column, string value)
+        public SqlSelector SetLike(string column, string value, bool not=false)
         {
             if (value == null) return this;
             var addition = $"[{column}] LIKE '%{value}%'";
             if (builder.Length > 1) builder.Append(" and ");
+            if (not) builder.Append("not ");
             builder.Append(addition);
             return this;
         }
@@ -176,19 +177,21 @@ namespace Truffle.Procedures
         /// </summary>
         /// <param name="column">The name of the column</param>
         /// <param name="value">The value of the column</param>
-        public SqlSelector Set(string column, object value)
+        public SqlSelector Set(string column, object value, bool not=false)
         {
             var addition = $"[{column}]{SqlUtils.ParseSelector(value)}";
             if (builder.Length > 1) builder.Append(") and (");
+            if (not) builder.Append("not ");
             builder.Append(addition);
             return this;
         }
 
-        public SqlSelector Or(string column, object value)
+        public SqlSelector Or(string column, object value, bool not=false)
         {
             var addition = $"[{column}]{SqlUtils.ParseSelector(value)}";
             this.builder.Insert(0, "(");
             if (builder.Length > 2) this.builder.Append(") or (");
+            if (not) builder.Append("not ");
             this.builder.Append(addition + ")");
             return this;
         }
@@ -210,7 +213,7 @@ namespace Truffle.Procedures
         /// Combines the parameters of two SqlSelectors with an OR conditional
         /// </summary>
         /// <param name="selector">The selector to combine with</param>
-        public SqlSelector Or(SqlSelector selector)
+        public SqlSelector Or(SqlSelector selector, bool not=false)
         {
             if (builder.Length == 1) 
             {
@@ -219,7 +222,8 @@ namespace Truffle.Procedures
             }
             if (selector.GetBuilder().Length == 1)
                 return this;
-            builder = new StringBuilder($"(({this.BuildParameters()} OR {selector.BuildParameters()})");
+            var n = not?"NOT ":"";
+            builder = new StringBuilder($"(({this.BuildParameters()} OR {n}{selector.BuildParameters()})");
             return this;
         }
 
@@ -227,7 +231,7 @@ namespace Truffle.Procedures
         /// Combines the parameters of two SqlSelectors with an AND conditional
         /// </summary>
         /// <param name="selector">The selector to combine with</param>
-        public SqlSelector And(SqlSelector selector)
+        public SqlSelector And(SqlSelector selector, bool not=false)
         {
             if (builder.Length == 1) 
             {
@@ -236,7 +240,8 @@ namespace Truffle.Procedures
             }
             if (selector.GetBuilder().Length == 1)
                 return this;
-            builder = new StringBuilder($"(({this.BuildParameters()} AND {selector.BuildParameters()})");
+            var n = not?"NOT ":"";
+            builder = new StringBuilder($"(({this.BuildParameters()} AND {n}{selector.BuildParameters()})");
             return this;
         }
 
