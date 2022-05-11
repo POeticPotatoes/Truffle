@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.WindowsAzure.Storage.Table;
 using Truffle.Database;
 using Truffle.Procedures;
 using Truffle.Utils;
 using Truffle.Validation;
+using Trufle.Procedures;
 
 namespace Truffle.Model
 {
@@ -151,13 +154,7 @@ namespace Truffle.Model
         /// <param name="database">The database to create a new entry in</param>
         public virtual void Create(DatabaseConnector database, bool validate=true) 
         {
-            if (validate)
-            {
-                Clean();
-                Validate();
-            }
-
-            SqlInserter inserter = new SqlInserter(this);
+            var inserter = CreateEditor<SqlInserter>();
             inserter.Insert(GetTable(),database);
         }
 
@@ -167,12 +164,7 @@ namespace Truffle.Model
         /// <param name="database">The database to create a new entry in</param>
         public virtual async Task CreateAsync(DatabaseConnector database, bool validate=true) 
         {
-            if (validate)
-            {
-                Clean();
-                Validate();
-            }
-            SqlInserter inserter = new SqlInserter(this);
+            var inserter = CreateEditor<SqlInserter>();
             await inserter.InsertAsync(GetTable(),database);
         }
 
@@ -182,12 +174,7 @@ namespace Truffle.Model
         /// <param name="database">The database to update</param>
         public void Update(DatabaseConnector database, bool validate=true) 
         {
-            if (validate)
-            {
-                Clean();
-                Validate();
-            }
-            SqlUpdater updater = new SqlUpdater(this);
+            var updater = CreateEditor<SqlUpdater>();
             updater.Update(GetTable(),database);
         }
 
@@ -197,13 +184,18 @@ namespace Truffle.Model
         /// <param name="database">The database to update</param>
         public async Task UpdateAsync(DatabaseConnector database, bool validate=true) 
         {
+            var updater = CreateEditor<SqlUpdater>();
+            await updater.UpdateAsync(GetTable(),database);
+        }
+
+        public T CreateEditor<T>(bool validate = true) where T: SqlEditor
+        {
             if (validate)
             {
                 Clean();
                 Validate();
             }
-            SqlUpdater updater = new SqlUpdater(this);
-            await updater.UpdateAsync(GetTable(),database);
+            return (T) Activator.CreateInstance(typeof(T), new object[] {this});
         }
 
         /// <summary>
