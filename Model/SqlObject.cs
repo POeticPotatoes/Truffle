@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.WindowsAzure.Storage.Table;
+using System.Linq;
 using Truffle.Database;
 using Truffle.Procedures;
 using Truffle.Utils;
@@ -20,6 +19,8 @@ namespace Truffle.Model
     /// </summary>
     public abstract class SqlObject
     {
+        private PropertyInfo id;
+
         /// <summary>
         /// Initialises an empty instance of an SqlObject
         /// </summary>
@@ -88,23 +89,16 @@ namespace Truffle.Model
         /// <returns>The name of the Id column</returns>
         public virtual string GetId()
         {
-            foreach (var p in GetColumns<IdAttribute> ())
-            {
-                var column = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
-                return column.Name;
-            }
-            
-            return null;
+            if (id == null)
+                id = GetColumns<IdAttribute>().First();
+            var a = (ColumnAttribute) id.GetCustomAttribute(typeof(ColumnAttribute));
+            return a.Name;
         }
 
         public virtual object GetIdValue()
         {
-            foreach (var p in GetColumns<IdAttribute> ())
-            {
-                return p.GetValue(this);
-            }
-            
-            return null;
+            if (id ==null) GetId();
+            return id.GetValue(this);
         }
 
         /// <summary>
@@ -190,12 +184,7 @@ namespace Truffle.Model
 
         public T CreateEditor<T>(bool validate = true) where T: SqlEditor
         {
-            if (validate)
-            {
-                Clean();
-                Validate();
-            }
-            return (T) Activator.CreateInstance(typeof(T), new object[] {this});
+            return (T) Activator.CreateInstance(typeof(T), new object[] {this, validate});
         }
 
         /// <summary>

@@ -59,6 +59,7 @@ namespace Truffle.Procedures
             string cmd = BuildCommand(table);
             if (cmd == null) return;
 
+            Console.WriteLine(cmd.ToString());
             //Console.WriteLine(text);
             database.RunCommand(cmd.ToString());
         }

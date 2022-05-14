@@ -165,4 +165,32 @@ namespace Truffle.Validation
             return false;
         }
     }
+
+    public class EqualsAttribute: DataValidatorAttribute
+    {
+        private readonly string str;
+
+        public EqualsAttribute(string name)
+        {
+            this.str = name;
+        }
+
+        public override bool Validate(string name, object value, SqlObject model)
+        {
+            var raw = GetValue(model);
+            if (value.Equals(raw)) return true;
+            SetMessage($"{value} of column {name} did not match the desired value of {raw} from {str}");
+            return false;
+        }
+
+        private object GetValue(SqlObject model)
+        {
+            if (typeof(PartialSqlObject).IsInstanceOfType(model))
+                return ((PartialSqlObject) model).GetValue(str);
+            var p = model.GetType().GetProperty(str);
+            if (p == null) return null;
+            return p.GetValue(model);
+        }
+        
+    }
 }
