@@ -33,7 +33,7 @@ namespace Truffle.Procedures
         /// <param name="o">The SqlObject to be updated</param>
         public SqlUpdater(SqlObject o, bool validate=true): base(o, validate) {
             string key = o.GetId();
-            var raw = o.GetType().GetProperty(key).GetValue(o);
+            var raw = o.GetIdValue();
             string id = SqlUtils.Parse(raw);
             selector = $"[{key}]={id}";
         }
