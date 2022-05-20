@@ -36,7 +36,7 @@ namespace Truffle.Model
         /// <param name="database">The database to connect to</param>
         public SqlObject(object value, DatabaseConnector database)
         {
-            initFromDatabase(value, GetId(), database);
+            InitFromDatabase(value, GetId(), database);
         }
 
         /// <summary>
@@ -50,10 +50,10 @@ namespace Truffle.Model
         /// <param name="database">The database to connect to</param>
         public SqlObject(object value, string column, DatabaseConnector database)
         {
-            initFromDatabase(value, column, database);
+            InitFromDatabase(value, column, database);
         }
 
-        protected void initFromDatabase(object value, string column, DatabaseConnector database)
+        protected void InitFromDatabase(object value, string column, DatabaseConnector database)
         {
             string req = BuildRequest(value, column);
 
@@ -90,14 +90,16 @@ namespace Truffle.Model
         public virtual string GetId()
         {
             if (id == null)
-                id = GetColumns<IdAttribute>().First();
+                id = GetColumns<IdAttribute>().FirstOrDefault();
+            if (id == null) return null;
             var a = (ColumnAttribute) id.GetCustomAttribute(typeof(ColumnAttribute));
             return a.Name;
         }
 
         public virtual object GetIdValue()
         {
-            if (id ==null) GetId();
+            if (id == null) GetId();
+            if (id == null) return null;
             return id.GetValue(this);
         }
 
@@ -166,7 +168,7 @@ namespace Truffle.Model
         /// Updates an existing entry in a database asynchronously with values stored in this object.
         /// </summary>
         /// <param name="database">The database to update</param>
-        public void Update(DatabaseConnector database, bool validate=true) 
+        public virtual void Update(DatabaseConnector database, bool validate=true) 
         {
             var updater = CreateEditor<SqlUpdater>();
             updater.Update(GetTable(),database);
@@ -176,7 +178,7 @@ namespace Truffle.Model
         /// Updates an existing entry in a database with values stored in this object.
         /// </summary>
         /// <param name="database">The database to update</param>
-        public async Task UpdateAsync(DatabaseConnector database, bool validate=true) 
+        public virtual async Task UpdateAsync(DatabaseConnector database, bool validate=true) 
         {
             var updater = CreateEditor<SqlUpdater>();
             await updater.UpdateAsync(GetTable(),database);
@@ -271,7 +273,7 @@ namespace Truffle.Model
         protected string BuildRequest(object value, string column) 
         {
             string val = SqlUtils.Parse(value);
-            return $"SELECT {BuildColumnSelector()} FROM {GetTable()} WHERE {column}={val}";
+            return $"SELECT TOP 1 {BuildColumnSelector()} FROM {GetTable()} WHERE {column}={val}";
         }
 
         /// <summary>

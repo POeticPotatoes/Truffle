@@ -13,7 +13,7 @@ namespace Truffle.Procedures
     /// </summary>
     public class SqlUpdater : SqlEditor
     {
-        private readonly string selector;
+        private string selector;
         
         /// <summary>
         /// Initialises a new SqlUpdater that targets a specific entry with a key-value pair corresponding to a column
@@ -22,8 +22,7 @@ namespace Truffle.Procedures
         /// <param name="idtype">The name of the column</param>
         public SqlUpdater(object value, string column)
         {
-            string id = SqlUtils.ParseSelector(value);
-            selector = $"{column}{id}";
+            SetSelector(value, column);
         }
 
         /// <summary>
@@ -33,6 +32,7 @@ namespace Truffle.Procedures
         /// <param name="o">The SqlObject to be updated</param>
         public SqlUpdater(SqlObject o, bool validate=true): base(o, validate) {
             string key = o.GetId();
+            if (key == null) return;
             var raw = o.GetIdValue();
             string id = SqlUtils.Parse(raw);
             selector = $"[{key}]={id}";
@@ -48,6 +48,17 @@ namespace Truffle.Procedures
             this.selector = selector.BuildParameters();
         }
 
+        public void SetSelector(object value, string column)
+        {
+            string id = SqlUtils.ParseSelector(value);
+            this.selector = $"[{column}]{id}";
+        }
+
+        public void SetSelector(SqlSelector selector)
+        {
+            this.selector = selector.BuildParameters();
+        }
+
         /// <summary>
         /// Updates a table in a database based on the changes registered in this object. Will not update the table if no changes have been registered using Set()
         /// </summary>if (value.GetType().Name == "Int64") 
@@ -59,8 +70,6 @@ namespace Truffle.Procedures
             string cmd = BuildCommand(table);
             if (cmd == null) return;
 
-            Console.WriteLine(cmd.ToString());
-            //Console.WriteLine(text);
             database.RunCommand(cmd.ToString());
         }
 

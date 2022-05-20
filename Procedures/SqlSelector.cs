@@ -16,6 +16,12 @@ namespace Truffle.Procedures
     {
         private StringBuilder builder = new StringBuilder("(");
 
+        public SqlSelector() {}
+        public SqlSelector(SqlObject o)
+        {
+            this.SetAll(o.GetAllValues());
+        }
+
         /// <summary>
         /// Builds a select string with values stored in this object.
         /// Values are used as select parameters and the generated string is of the following format:

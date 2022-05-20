@@ -14,6 +14,7 @@ This library was written by POeticPotatoes, who created it in the process of bui
         - [Sql Databases and Queries](#sql-databases-and-queries)
         - [Running Commands](#running-commands)
         - [Running Procedures](#running-procedures)
+        - [Dcumentation](#databaseconnector-documentation)
     - Using models
         - [Creating a Model](#creating-a-model)
         - [Instantiating by Key](#instantiating-by-key)
@@ -160,6 +161,7 @@ SqlSelector --> DatabaseConnector
     - [Sql Databases and Queries](#sql-databases-and-queries)
     - [Running Commands](#running-commands)
     - [Running Procedures](#running-procedures)
+    - [Documentation](#databaseconnector-documentation)
 - Using models
     - [Creating a Model](#creating-a-model)
     - [Instantiating by Key](#instantiating-by-key)
@@ -169,6 +171,7 @@ SqlSelector --> DatabaseConnector
     - [Modifying a Database](#modifying-a-database)
     - [PartialSqlObject](#using-partialsqlobject)
     - [GenericSqlObject](#using-genericsqlobject)
+    - [Documentation](#sqlobject-documentation)
 - Retrieving and modifying data
     - [Selecting](#selecting-from-a-table)
     - [Conditionals](#chaining-sqlselectors)
@@ -176,11 +179,13 @@ SqlSelector --> DatabaseConnector
     - [Updating](#updating-a-table)
     - [Updating with custom parameters](#updating-with-sqlselector)
     - [Inserting](#inserting-to-a-table)
+    - [Documentation](#table-modification-documentation)
 - Data Validation
     - [Data Validation in Truffle](#data-validation-in-truffle)
     - [Adding Validation](#adding-validation)
     - [Enabling and Disabling Validation](#enabling-and-disabling-validation)
     - [Custom Validations](#writing-custom-validations)
+    - [Documentation](#data-validation-documentation)
 - Asynchronous methods
     - [Asynchronous Support](#asynchronous-methods-in-truffle)
 
@@ -224,14 +229,17 @@ This is useful when handling a query that would return multiple rows of data, or
 
 
 ## Running Procedures
-Procedure calls are similarly made with the `RunCommand()` method, but with the configuration of additional parameters to execute the call:
+Procedures can be called with the same syntax as a normal Sql query with `RunCommand()`, but their parameters may also be appended separately with the configuration of additional parameters:
 
 ```C#
 using (var database = new DatabaseConnector(str))
 {
     var procedureName = "MyProcedure";
-    string[] parameters = ["param1", "param2"]; // Your procedure parameters
+    string[] parameters = ["param1", "param2"]; // Procedure parameters
     var response = (object[]) database.RunCommand(procedureName, true, parameters);
+
+    // Alternatively, call the procedure as a regular SQL query without additional configuration
+    var response2 = (object[]) database.RunCommand("MyProcedure 'param1', 'param2'");
 }
 ```
 
@@ -239,6 +247,52 @@ using (var database = new DatabaseConnector(str))
 
 Similar to a regular query, `complex` may also be set to `true` for a more substantial output.
 
+
+## DatabaseConnector Documentation
+namespace Truffle.Database  
+### DatabaseConnector
+public class DatabaseConnector: IDisposable
+#### Fields
+| Modifier and Type | Field | Summary |
+| --- | --- | -- |
+| private static bool | **_verbose** | Determines whether to log commands executed during runtime. |
+| private static ILogger | **_logger** | The logger to use when logging information. |
+#### Constructors
+| Modifier | Constructor | Description |
+| --- | --- | --- | 
+| public | **DatabaseConnector**(**string** connectionstr) | Instantiates a connection to an SQL database with a connection string.|
+#### Method Summary
+| Modifier and Type | Method | Summary |
+| --- | --- | --- |
+| public static void | **SetVerbose**(**bool** verbose, **ILogger** logger) | Sets whether to log the queries run with `DatabaseConnector` and provides an `ILogger` to log with.
+| public void | **Dispose**() | Disposes of a connection to an SQL database. Can be utilised with a `using` statement.
+| public **object** | **RunCommand**(**string** text, **bool** isProcedure=false, **object[]** values=null, **bool** complex=false) | Runs an SQL query and returns the result. |
+| public async **Task**<**object**> |  **RunCommandAsync**(**string** text, **bool** isProcedure=false, **object[]** values=null, **bool** complex=false) | Runs an SQL query asynchronously and returns the result. |
+<hr>
+
+
+#### `RunCommand()`
+> public object RunCommand(string text, bool isProcedure=false, object[] values=null, bool complex=false) 
+
+Runs an SQL query and returns the result. 
+
+This returns an `object[]` by default, but can be configured to return a `List<Dictionary<string, object>>` by setting the optional parameter of `complex` to true.
+
+**Parameters**
+- **text** - The query to run. Procedures are also accepted queries, but if **values** is used to pass in parameters for the procedure then only the procedure name is required.
+- **isProcedure** - Whether the command is a procedure. This only needs to be set to true if **values** is used to pass in parameters for the procedure.
+- **values** - An array of objects to pass into the procedure as parameters.
+- **complex** - Sets the return type of the method to a `List<Dictionary<string, object>>` if set to `true`.
+
+<hr>
+
+#### `RunCommandAsync()`
+> public Task\<object> RunCommand(string text, bool isProcedure=false, object[] values=null, bool complex=false)
+
+Similar to [RunCommand()](#runcommand), runs an SQL query asynchronously and returns the result. 
+
+> NOTE: This may require you to enable `MultipleActiveResultSets` in your SQL connection string.
+<hr>
 
 ## Creating a Model
 In order to make use of the modelling capabilities of Truffle, we must first create a POCO (Plain old C# Object) that represents an entry in our table with some additional annotations:
@@ -498,6 +552,124 @@ public List<Dictionary<string, object>> GetAll(string tableName)
 
 
 `GenericSqlObject` may also be extended in instances where there are a great number of tables with similar function such that the same methods may be shared over many instances of different tables, without the need to define classes for each of them specifically.
+
+
+## SqlObject Documentation
+namespace Truffle.Model
+### SqlObject
+public abstract class SqlObject
+| Subclasses|
+| --- |
+| **PartialSqlObject**, **GenericSqlObject** |
+#### Constructors
+| Modifier | Constructor | Description |
+| --- | --- | --- |
+| public | **SqlObject**() | Initialises a new instance of an SqlObject. |
+| | **SqlObject**(**object** id, **DatabaseConnector** database) | Retrieves a row from an SQL database by `Id` and initialises itself with its values. |
+| | **SqlObject**(**object** value, **string** column, **DatabaseConnector** database) | Retrieves the first instance of a row from an SQL database with the corresponding column value and initialises itself with its values. |
+| | **SqlObject**(**Dictionary<string, object>** values) | Initialises an SqlObject with values from a dictionary.
+#### Method Summary
+| Modifier and Type | Method | Summary |
+| --- | --- | --- |
+| protected **Enumerable\<PropertyInfo>** | **GetColumns**\<**T**> | Returns an iterable list of properties containing the desired `Attribute`
+| protected void | **InitFromDatabase**(**object** value, **string** column, **DatabaseConnector** database) | Initialises itself with an entry from a database based on a column-value pair. |
+| public virtual void | **LoadValues**(**Dictionary<string, object>**) | Initialises itself with values from a dictionary. |
+| protected string | **BuildRequest**(**object** value, **string** column) | Builds a select string for the first entry in a database with a matching column-value pair. |
+| public string | **BuildAllRequest**(**int** top=-1, **string** orderBy=null) | Builds a string that selects all entries from a table. |
+| public virtual string | **BuildColumnSelector**() | Builds a comma-separated list of columns in this object. |
+| public bool | **Equals**(**SqlObject** o) | Compares all values in the object and returns if they are equal to the values in this object. |
+| public void | **Clean**() | Checks all columns for `DataCleanerAttribute` and converts any data that should be cleaned.
+| public void | **Validate**() | Checks all columns for `DataValidatorAttribute` and throws an error if any validation fails.
+| public virtual string | **GetId**() | Returns the name of the `Id` column for the object. If no property has been marked with the `Id` Attribute, this returns null. |
+| public virtual object | **GetIdValue**() | Returns the current value of the property representing the `Id` of the object. |
+| public virtual string | **GetTable**() | Returns the table of the object as declared in the `Table` Annotation. |
+| public virtual **Dictionary<string, object>** | **GetAllValues**(**bool** ignoreIdentities=false) | Returns a `Dictionary` with all values currently held within the `SqlObject`. |
+| public virtual void | **LogValues**() | Logs all keys, values, and types currently stored in the object with `Console#WriteLine`. |
+| public virtual void | **Create**(**DatabaseConnector** database, **bool** validate=true) | Creates a new entry in a database with values stored in this object. |
+| public virtual async **Task** | **CreateAsync**(**DatabaseConnector** database, **bool** validate=true) | Asynchronously creates a new entry in a database with values stored in this object. |
+| public virtual void | **Update**(**DatabaseConnector** database, **bool** validate=true) | Updates an existing entry with a corresponding `Id` value in an SQL database with values stored in this object. |
+| public virtual **Task** | **Update**(**DatabaseConnector** database, **bool** validate=true) | Updates an existing entry with a corresponding `Id` value in an SQL database with values stored in this object. |
+| public virtual **T** | **CreateEditor**<**T**>(**bool** validate=true) | Instantiates an `SqlEditor` and loads values from this object into it. |
+
+<hr>
+
+#### `GetColumns()`
+> protected IEnumerable\<PropertyInfo> GetColumns\<T> () where T: Attribute
+
+Returns an iterable of properties containing the desired `Attribute`.
+
+**Parameters**
+- **T** - The type of attribute to look for
+
+<hr>
+
+#### `InitFromDatabase()`
+> protected void InitFromDatabase(object value, string column, DatabaseConnector database)
+
+Identifies the first instance of a row from an SQL database with the corresponding column and value and initialises itself with its values.
+
+The SQL query is created with `BuildRequest()` and values are initialised with `LoadValues()`
+
+**Parameters**
+- **value** - The value of the column
+- **column** - The name of the column
+- **database** - The database to retrieve from
+
+<hr>
+
+#### `LoadValues()`
+> public virtual void LoadValues(Dictionary<string, object> values)
+
+Initialises itself with values from a dictionary.
+
+Properties with `Column` attributes will have their values set to corresponding keys in the dictionary.
+
+**Parameters**
+- **values** - The dictionary to initialise values in the object with
+
+<hr>
+
+#### `BuildRequest()`
+> protected string BuildRequest(object value, string column)
+
+Builds a select string for the first entry in a database with a matching column-value pair. 
+
+        SELECT TOP 1 Owner, Name, Age, Breed FROM [dbo].[tblDog] where Name='Spot'
+
+The columns are selected with `BuildColumnSelector()` and do not include columns that are not explicitly stated in the model.
+> NOTE: This behavior is overriden in PartialSqlObject to return all columns from a table.
+
+**Parameters**
+- **value** - The value of the column
+- **column** - The name of the column
+
+<hr>
+
+#### `BuildAllRequest()`
+> public string BuildAllRequest(int top = -1, string orderBy = null)
+
+Builds a string that selects all entries from a table.
+
+        SELECT Owner, Name, Age, Breed FROM [dbo].[tblDog]
+
+The columns are selected with `BuildColumnSelector()` and do not include columns that are not explicitly stated in the model.
+> NOTE: This behavior is overriden in PartialSqlObject to return all columns from a table.
+
+**Parameters**
+- **top** - If set, limits the number of returned rows
+- **orderBy** - If set, orders the returned values by a specified column
+
+<hr>
+
+#### `BuildColumnSelector`
+> public virtual string BuildColumnSelector()
+
+Builds a comma-separated list of columns represented by this object.
+
+        Owner, Name, Age, Breed
+This behavior is overriden in PartialSqlObject to return `*` instead, representing all columns.  
+
+<hr>
 
 
 ## Selecting from a Table

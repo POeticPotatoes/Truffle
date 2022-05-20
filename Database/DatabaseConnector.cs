@@ -3,6 +3,7 @@ using System.Linq;
 using System.Data;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Truffle.Database
 {
@@ -13,6 +14,7 @@ namespace Truffle.Database
     public class DatabaseConnector : IDisposable
     {
         private static bool _verbose = false;
+        private static ILogger _logger;
         private readonly SqlConnection connection;
 
         /// <summary>
@@ -32,9 +34,10 @@ namespace Truffle.Database
             connection.Dispose();
         }
 
-        public static void setVerbose(bool verbose)
+        public static void setVerbose(bool verbose, ILogger logger)
         {
             _verbose = verbose;
+            _logger = logger;
         }
 
         /// <summary>
@@ -45,10 +48,10 @@ namespace Truffle.Database
         /// <param name="text">The query to run. If the query is a procedure, then the name of the procedure. </param>
         /// <param name="isProcedure">Whether the command is a procedure</param>
         /// <param name="values">The procedure parameters to be passed, if any</param>
-        /// <param name="complex">If set to true, returns a List(Dictionary(string, object))</param>
+        /// <param name="complex">Sets the return type of the method to a List(Dictionary(string, object)) if set to true</param>
         public object RunCommand(string text, bool isProcedure=false, object[] values = null, bool complex=false) 
         {
-            if (_verbose) Console.WriteLine(text);
+            if (_verbose) _logger.LogInformation(text);
             using (var cmd = BuildSqlCommand(text, isProcedure, values))
             {
                 // Execute the command
@@ -71,7 +74,7 @@ namespace Truffle.Database
         /// <param name="complex">If set to true, returns a List(Dictionary(string, object))</param>
         public async Task<object> RunCommandAsync(string text, bool isProcedure=false, object[] values = null, bool complex=false) 
         {
-            if (_verbose) Console.WriteLine(text);
+            if (_verbose)  _logger.LogInformation(text);
             using (var cmd = BuildSqlCommand(text, isProcedure, values))
             {
                 // Execute the command
