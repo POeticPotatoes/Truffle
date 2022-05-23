@@ -117,7 +117,7 @@ namespace Truffle.Model
         /// Retrieves all values stored in the object as a Dictionary.
         /// </summary>
         /// <returns>All values in the object.</returns>
-        public virtual Dictionary<string, object> GetAllValues(bool ignoreIdentities=false)
+        public virtual Dictionary<string, object> GetAllValues(bool excludeOptional=false)
         {
             Dictionary<string, object> ans = new Dictionary<string, object>();
 
@@ -125,10 +125,13 @@ namespace Truffle.Model
             {
                 var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
                 if (attribute == null) continue;
-                if (ignoreIdentities && p.GetCustomAttribute(typeof(IdentityAttribute)) != null)
-                    continue;
+                if (excludeOptional && p.GetCustomAttribute(typeof(IdentityAttribute)) != null)
+                        continue;
 
-                ans.Add(attribute.Name, p.GetValue(this));
+                var val = p.GetValue(this);
+                if (excludeOptional && val == null && p.GetCustomAttribute(typeof(OptionalAttribute)) != null)
+                    continue;
+                ans.Add(attribute.Name, val);
             }
             return ans;
         }

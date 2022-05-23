@@ -47,4 +47,7 @@ namespace Truffle.Model
 
     [AttributeUsage( AttributeTargets.Property)]
     public class IdentityAttribute: Attribute {}
+
+    [AttributeUsage( AttributeTargets.Property)]
+    public class OptionalAttribute: Attribute {}
 }
