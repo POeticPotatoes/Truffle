@@ -43,7 +43,7 @@ namespace Truffle.Model
         {
             this.Id = id;
             this.Table = table;
-            base.initFromDatabase(value, id, database);
+            base.InitFromDatabase(value, id, database);
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Truffle.Model
         {
             this.Id = id;
             this.Table = table;
-            base.initFromDatabase(value, column, database);
+            base.InitFromDatabase(value, column, database);
         }
 
         /// <summary>

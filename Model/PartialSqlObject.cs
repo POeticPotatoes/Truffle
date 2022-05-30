@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Truffle.Database;
-using Truffle.Utils;
 
 namespace Truffle.Model
 {

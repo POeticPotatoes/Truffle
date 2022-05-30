@@ -3,6 +3,8 @@ using System.Linq;
 using System.Data;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace Truffle.Database
 {
@@ -12,7 +14,10 @@ namespace Truffle.Database
     /// </summary>
     public class DatabaseConnector : IDisposable
     {
+        public static readonly int DefaultTimeout = 30;
         private static bool _verbose = false;
+        private static int _timeout = 30;
+        private static ILogger _logger;
         private readonly SqlConnection connection;
 
         /// <summary>
@@ -32,9 +37,20 @@ namespace Truffle.Database
             connection.Dispose();
         }
 
-        public static void setVerbose(bool verbose)
+        public static void setVerbose(bool verbose, ILogger logger)
         {
             _verbose = verbose;
+            _logger = logger;
+        }
+
+        public static void setTimeout(int timeout)
+        {
+            _timeout = timeout;
+        }
+
+        public static int getTimeout()
+        {
+            return _timeout;
         }
 
         /// <summary>
@@ -45,12 +61,13 @@ namespace Truffle.Database
         /// <param name="text">The query to run. If the query is a procedure, then the name of the procedure. </param>
         /// <param name="isProcedure">Whether the command is a procedure</param>
         /// <param name="values">The procedure parameters to be passed, if any</param>
-        /// <param name="complex">If set to true, returns a List(Dictionary(string, object))</param>
-        public object RunCommand(string text, bool isProcedure=false, object[] values = null, bool complex=false) 
+        /// <param name="complex">Sets the return type of the method to a List(Dictionary(string, object)) if set to true</param>
+        public object RunCommand(string text, bool isProcedure=false, Dictionary<string, object> values = null, bool complex=false) 
         {
-            if (_verbose) Console.WriteLine(text);
+            if (_verbose) _logger.LogInformation(text);
             using (var cmd = BuildSqlCommand(text, isProcedure, values))
             {
+                cmd.CommandTimeout = _timeout;
                 // Execute the command
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
@@ -69,11 +86,12 @@ namespace Truffle.Database
         /// <param name="isProcedure">Whether the command is a procedure</param>
         /// <param name="values">The procedure parameters to be passed, if any</param>
         /// <param name="complex">If set to true, returns a List(Dictionary(string, object))</param>
-        public async Task<object> RunCommandAsync(string text, bool isProcedure=false, object[] values = null, bool complex=false) 
+        public async Task<object> RunCommandAsync(string text, bool isProcedure=false, Dictionary<string, object> values = null, bool complex=false) 
         {
-            if (_verbose) Console.WriteLine(text);
+            if (_verbose)  _logger.LogInformation(text);
             using (var cmd = BuildSqlCommand(text, isProcedure, values))
             {
+                cmd.CommandTimeout = _timeout;
                 // Execute the command
                 using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
                 {
@@ -83,7 +101,7 @@ namespace Truffle.Database
             }
         }
 
-        private SqlCommand BuildSqlCommand(string text, bool isProcedure=false, object[] values = null)
+        private SqlCommand BuildSqlCommand(string text, bool isProcedure=false, Dictionary<string, object> values = null)
         {
             SqlCommand cmd = new SqlCommand(text, connection);
             if (isProcedure)
@@ -91,10 +109,8 @@ namespace Truffle.Database
                 cmd.CommandType = CommandType.StoredProcedure;
                 if (values != null)
                 {
-                    object[] parameters = (object[]) RunCommand($"select PARAMETER_NAME from information_schema.parameters where specific_name='{text}'");
-                    string[] keys = (from o in parameters select (string) o).ToArray();
-                    for (var i=0;i<keys.Length;i++)
-                        cmd.Parameters.Add(new SqlParameter(keys[i], values[i]));
+                    foreach (string s in values.Keys)
+                        cmd.Parameters.Add(new SqlParameter(s, values[s]));
                 } 
             }
             return cmd;

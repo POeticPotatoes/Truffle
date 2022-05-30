@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Linq;
 using Truffle.Database;
 using Truffle.Procedures;
 using Truffle.Utils;
 using Truffle.Validation;
+using Trufle.Procedures;
 
 namespace Truffle.Model
 {
@@ -17,6 +19,8 @@ namespace Truffle.Model
     /// </summary>
     public abstract class SqlObject
     {
+        private PropertyInfo id;
+
         /// <summary>
         /// Initialises an empty instance of an SqlObject
         /// </summary>
@@ -32,7 +36,7 @@ namespace Truffle.Model
         /// <param name="database">The database to connect to</param>
         public SqlObject(object value, DatabaseConnector database)
         {
-            initFromDatabase(value, GetId(), database);
+            InitFromDatabase(value, GetId(), database);
         }
 
         /// <summary>
@@ -46,10 +50,10 @@ namespace Truffle.Model
         /// <param name="database">The database to connect to</param>
         public SqlObject(object value, string column, DatabaseConnector database)
         {
-            initFromDatabase(value, column, database);
+            InitFromDatabase(value, column, database);
         }
 
-        protected void initFromDatabase(object value, string column, DatabaseConnector database)
+        protected void InitFromDatabase(object value, string column, DatabaseConnector database)
         {
             string req = BuildRequest(value, column);
 
@@ -85,23 +89,18 @@ namespace Truffle.Model
         /// <returns>The name of the Id column</returns>
         public virtual string GetId()
         {
-            foreach (var p in GetColumns<IdAttribute> ())
-            {
-                var column = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
-                return column.Name;
-            }
-            
-            return null;
+            if (id == null)
+                id = GetColumns<IdAttribute>().FirstOrDefault();
+            if (id == null) return null;
+            var a = (ColumnAttribute) id.GetCustomAttribute(typeof(ColumnAttribute));
+            return a.Name;
         }
 
         public virtual object GetIdValue()
         {
-            foreach (var p in GetColumns<IdAttribute> ())
-            {
-                return p.GetValue(this);
-            }
-            
-            return null;
+            if (id == null) GetId();
+            if (id == null) return null;
+            return id.GetValue(this);
         }
 
         /// <summary>
@@ -118,7 +117,7 @@ namespace Truffle.Model
         /// Retrieves all values stored in the object as a Dictionary.
         /// </summary>
         /// <returns>All values in the object.</returns>
-        public virtual Dictionary<string, object> GetAllValues(bool ignoreIdentities=false)
+        public virtual Dictionary<string, object> GetAllValues(bool excludeOptional=false)
         {
             Dictionary<string, object> ans = new Dictionary<string, object>();
 
@@ -126,10 +125,13 @@ namespace Truffle.Model
             {
                 var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
                 if (attribute == null) continue;
-                if (ignoreIdentities && p.GetCustomAttribute(typeof(IdentityAttribute)) != null)
-                    continue;
+                if (excludeOptional && p.GetCustomAttribute(typeof(IdentityAttribute)) != null)
+                        continue;
 
-                ans.Add(attribute.Name, p.GetValue(this));
+                var val = p.GetValue(this);
+                if (excludeOptional && val == null && p.GetCustomAttribute(typeof(OptionalAttribute)) != null)
+                    continue;
+                ans.Add(attribute.Name, val);
             }
             return ans;
         }
@@ -151,13 +153,7 @@ namespace Truffle.Model
         /// <param name="database">The database to create a new entry in</param>
         public virtual void Create(DatabaseConnector database, bool validate=true) 
         {
-            if (validate)
-            {
-                Clean();
-                Validate();
-            }
-
-            SqlInserter inserter = new SqlInserter(this);
+            var inserter = CreateEditor<SqlInserter>();
             inserter.Insert(GetTable(),database);
         }
 
@@ -167,12 +163,7 @@ namespace Truffle.Model
         /// <param name="database">The database to create a new entry in</param>
         public virtual async Task CreateAsync(DatabaseConnector database, bool validate=true) 
         {
-            if (validate)
-            {
-                Clean();
-                Validate();
-            }
-            SqlInserter inserter = new SqlInserter(this);
+            var inserter = CreateEditor<SqlInserter>();
             await inserter.InsertAsync(GetTable(),database);
         }
 
@@ -180,14 +171,9 @@ namespace Truffle.Model
         /// Updates an existing entry in a database asynchronously with values stored in this object.
         /// </summary>
         /// <param name="database">The database to update</param>
-        public void Update(DatabaseConnector database, bool validate=true) 
+        public virtual void Update(DatabaseConnector database, bool validate=true) 
         {
-            if (validate)
-            {
-                Clean();
-                Validate();
-            }
-            SqlUpdater updater = new SqlUpdater(this);
+            var updater = CreateEditor<SqlUpdater>();
             updater.Update(GetTable(),database);
         }
 
@@ -195,15 +181,20 @@ namespace Truffle.Model
         /// Updates an existing entry in a database with values stored in this object.
         /// </summary>
         /// <param name="database">The database to update</param>
-        public async Task UpdateAsync(DatabaseConnector database, bool validate=true) 
+        public virtual async Task UpdateAsync(DatabaseConnector database, bool validate=true) 
+        {
+            var updater = CreateEditor<SqlUpdater>();
+            await updater.UpdateAsync(GetTable(),database);
+        }
+
+        public T CreateEditor<T>(bool validate = true) where T: SqlEditor
         {
             if (validate)
             {
-                Clean();
-                Validate();
+                this.Clean();
+                this.Validate();
             }
-            SqlUpdater updater = new SqlUpdater(this);
-            await updater.UpdateAsync(GetTable(),database);
+            return (T) Activator.CreateInstance(typeof(T), new object[] {this, false});
         }
 
         /// <summary>
@@ -262,8 +253,18 @@ namespace Truffle.Model
                         break;
                     }
                     p.SetValue(this, value);
+                } catch (KeyNotFoundException e)
+                {
+                    Console.WriteLine($"For property {p} of column {attribute.Name}: "); 
+                    Console.WriteLine(e.Message); 
+                    Console.WriteLine(e.StackTrace);
                 } catch (Exception e)
-                {Console.WriteLine($"For property {p} of column {attribute.Name}: "); Console.WriteLine(e.Message); Console.WriteLine(e.StackTrace);}
+                {
+                    Console.WriteLine($"{e.GetType()} For property {p} of column {attribute.Name}: "); 
+                    Console.WriteLine(e.Message); 
+                    Console.WriteLine(e.StackTrace);
+                    throw e;
+                }
             }
         }
 
@@ -295,7 +296,7 @@ namespace Truffle.Model
         protected string BuildRequest(object value, string column) 
         {
             string val = SqlUtils.Parse(value);
-            return $"SELECT {BuildColumnSelector()} FROM {GetTable()} WHERE {column}={val}";
+            return $"SELECT TOP 1 {BuildColumnSelector()} FROM {GetTable()} WHERE {column}={val}";
         }
 
         /// <summary>
