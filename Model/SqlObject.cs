@@ -255,6 +255,11 @@ namespace Truffle.Model
                     case (Int64):
                         value = Convert.ToInt32(value);
                         break;
+                    case (Byte[]):
+                        if (p.PropertyType == typeof(byte))
+                            break;
+                        value = Convert.ToBase64String((byte[]) value);
+                        break;
                     }
                     p.SetValue(this, value);
                 } catch (Exception e)
