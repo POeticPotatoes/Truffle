@@ -107,6 +107,23 @@ namespace Truffle.Validation
         }
     }
 
+    public class MaxLengthAttribute: DataValidatorAttribute
+    {
+        private readonly int maxLength;
+        public MaxLengthAttribute(int maxLength)
+        {
+            this.maxLength = maxLength;
+        }
+
+        public override bool Validate(string name, object value, SqlObject model)
+        {
+            if (value == null) return true;
+            if (value.ToString().Length <= maxLength) return true;
+            SetMessage($"{value} exceeded the max length of {maxLength} for this field.");
+            return false;
+        }
+    }
+
     /// <summary>
     /// Checks that a value is not null or an empty string
     /// </summary>

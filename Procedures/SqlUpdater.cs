@@ -4,7 +4,6 @@ using Truffle.Database;
 using Truffle.Model;
 using Truffle.Utils;
 using Trufle.Procedures;
-using System;
 
 namespace Truffle.Procedures
 {
@@ -14,7 +13,7 @@ namespace Truffle.Procedures
     public class SqlUpdater : SqlEditor
     {
         private string selector;
-        
+
         /// <summary>
         /// Initialises a new SqlUpdater that targets a specific entry with a key-value pair corresponding to a column
         /// </summary>
@@ -30,7 +29,8 @@ namespace Truffle.Procedures
         /// A subsequent Update() call would update an entry in the database with values from the object.
         /// </summary>
         /// <param name="o">The SqlObject to be updated</param>
-        public SqlUpdater(SqlObject o, bool validate=true): base(o, validate) {
+        public SqlUpdater(SqlObject o, bool validate = true) : base(o, validate)
+        {
             string key = o.GetId();
             if (key == null) return;
             var raw = o.GetIdValue();
@@ -61,7 +61,7 @@ namespace Truffle.Procedures
 
         /// <summary>
         /// Updates a table in a database based on the changes registered in this object. Will not update the table if no changes have been registered using Set()
-        /// </summary>if (value.GetType().Name == "Int64") 
+        /// </summary>if (value.GetType().Name == "Int64")
         /// <param name="table">The table to be updated</param>
         /// <param name="database">The database to be updated</param>
         /// <returns>Whether the update to the table was successful</returns>

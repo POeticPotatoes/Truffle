@@ -189,7 +189,12 @@ namespace Truffle.Model
 
         public T CreateEditor<T>(bool validate = true) where T: SqlEditor
         {
-            return (T) Activator.CreateInstance(typeof(T), new object[] {this, validate});
+            if (validate)
+            {
+                this.Clean();
+                this.Validate();
+            }
+            return (T) Activator.CreateInstance(typeof(T), new object[] {this, false});
         }
 
         /// <summary>
@@ -243,8 +248,18 @@ namespace Truffle.Model
                         break;
                     }
                     p.SetValue(this, value);
+                } catch (KeyNotFoundException e)
+                {
+                    Console.WriteLine($"For property {p} of column {attribute.Name}: "); 
+                    Console.WriteLine(e.Message); 
+                    Console.WriteLine(e.StackTrace);
                 } catch (Exception e)
-                {Console.WriteLine($"For property {p} of column {attribute.Name}: "); Console.WriteLine(e.Message); Console.WriteLine(e.StackTrace);}
+                {
+                    Console.WriteLine($"{e.GetType()} For property {p} of column {attribute.Name}: "); 
+                    Console.WriteLine(e.Message); 
+                    Console.WriteLine(e.StackTrace);
+                    throw e;
+                }
             }
         }
 
