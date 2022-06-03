@@ -61,7 +61,7 @@ namespace Truffle.Utils
         /// <returns></returns>
         public static DateTime ParseDate(object raw)
         {
-            return DateTime.ParseExact((string) raw,"yyyy-MM-dd",null);
+            return DateTime.ParseExact(((string) raw).Substring(0, 10),"yyyy-MM-dd",null);
         }
     }
 }

@@ -236,8 +236,8 @@ namespace Truffle.Model
                     case (System.DBNull):
                         value = null;
                         break;
-                    case (DateTime):
-                        if (!typeof(string).IsInstanceOfType(value)) break;
+                    case (string):
+                        if (!typeof(DateTime?).Equals(p.PropertyType)) break;
                         value = SqlUtils.ParseDate(value);
                         break;
                     case (decimal):
@@ -352,6 +352,7 @@ namespace Truffle.Model
                     }
                 } catch (Exception e)
                 {
+                    Console.WriteLine(e.Message);
                     Console.WriteLine(e.StackTrace);
                     throw new InvalidDataException($"For property {p.Name}: {e.Message}");
                 }
@@ -366,6 +367,13 @@ namespace Truffle.Model
                 if (c == null) continue;
                 yield return p;
             }
+        }
+
+        public static string GetTable(Type t)
+        {
+            var a = (TableAttribute) t.GetCustomAttribute(typeof(TableAttribute));
+            if (a == null) return null;
+            return a.Name;
         }
     }
 }
