@@ -236,10 +236,6 @@ namespace Truffle.Model
                     case (System.DBNull):
                         value = null;
                         break;
-                    case (string):
-                        if (!typeof(DateTime?).Equals(p.PropertyType)) break;
-                        value = SqlUtils.ParseDate(value);
-                        break;
                     case (decimal):
                         value = Decimal.ToDouble((decimal) value);
                         break;
