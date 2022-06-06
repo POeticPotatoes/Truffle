@@ -96,6 +96,20 @@ namespace Truffle.Model
             return a.Name;
         }
 
+        public virtual PropertyInfo GetIdProperty()
+        {
+            if (id == null) GetId();
+            if (id == null) return null;
+            return id;
+        }
+
+        public virtual void SetId(object value)
+        {
+            if (id == null) GetId();
+            if (id == null) return;
+            id.SetValue(this, value);
+        }
+
         public virtual object GetIdValue()
         {
             if (id == null) GetId();
@@ -259,7 +273,7 @@ namespace Truffle.Model
                     Console.WriteLine($"{e.GetType()} For property {p} of column {attribute.Name}: "); 
                     Console.WriteLine(e.Message); 
                     Console.WriteLine(e.StackTrace);
-                    throw e;
+                    throw;
                 }
             }
         }
