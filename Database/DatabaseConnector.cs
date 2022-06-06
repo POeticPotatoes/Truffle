@@ -37,7 +37,7 @@ namespace Truffle.Database
             connection.Dispose();
         }
 
-        public static void setVerbose(bool verbose, ILogger logger)
+        public static void SetVerbose(bool verbose, ILogger logger)
         {
             _verbose = verbose;
             _logger = logger;
