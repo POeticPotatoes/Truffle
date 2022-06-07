@@ -12,7 +12,6 @@ namespace Truffle.Model
     public abstract class PartialSqlObject : SqlObject
     {
         private Dictionary<string, object> data = new Dictionary<string, object>();
-        private Dictionary<string, PropertyInfo> map = new Dictionary<string, PropertyInfo>();
 
         /// <summary>
         /// Initialises an empty instance of a PartialSqlObject
@@ -50,50 +49,17 @@ namespace Truffle.Model
         {
             base.LoadValues(values);
             data = values;
-
-            foreach (var p in this.GetType().GetProperties())
-            {
-                var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
-                if (attribute == null) continue;
-                
-                map.Add(attribute.Name, p);
-            }
-        }
-
-        /// <summary>
-        /// Retrieves a value of a column from the object.
-        /// </summary>
-        /// <param name="column">The name of the column</param>
-        /// <returns>The value of the column, or null if it isn't present.</returns>
-        public object GetValue(string column) 
-        {
-            if (map.ContainsKey(column))
-                data[column] = map[column].GetValue(this);
-            if (!data.ContainsKey(column)) return null;
-            var o = data[column];
-            if (typeof(System.DBNull).IsInstanceOfType(o)) return null;
-            return o;
-        }
-
-        public void SetValue(string column, object o) 
-        {
-            if (map.ContainsKey(column))
-                map[column].SetValue(this, o);
-            data[column] = o;
         }
 
         public override Dictionary<string, object> GetAllValues(bool ignoreIdentities=false)
         {
             var ignore = new List<string>();
-            foreach (PropertyInfo p in this.GetType().GetProperties())
+            foreach (KeyValuePair<string, PropertyInfo> c in GetColumns())
             {
-                var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
-                if (attribute == null) continue;
-                
-                if (ignoreIdentities && p.GetCustomAttribute(typeof(IdentityAttribute)) != null)
-                    ignore.Add(attribute.Name);
+                if (ignoreIdentities && c.Value.GetCustomAttribute(typeof(IdentityAttribute)) != null)
+                    ignore.Add(c.Value.Name);
 
-                data[attribute.Name] =  p.GetValue(this);
+                data[c.Key] =  c.Value.GetValue(this);
             }
 
             var ans = new Dictionary<string, object>();
@@ -107,51 +73,25 @@ namespace Truffle.Model
         }
 
         /// <summary>
-        /// Returns the value of a column cast as a bool.
+        /// Retrieves a value of a column from the object.
         /// </summary>
         /// <param name="column">The name of the column</param>
-        /// <returns>The boolean value of the column, or false if it isn't present.</returns>
-        public bool GetBoolean(string column) 
+        /// <returns>The value of the column, or null if it isn't present.</returns>
+        public override object GetValue(string column) 
         {
-            object o = GetValue(column);
-            return o==null?false:(bool) o;
+            if (this.HasColumn(column))
+                data[column] = GetValue(column);
+            if (!data.ContainsKey(column)) return null;
+            var o = data[column];
+            if (typeof(System.DBNull).IsInstanceOfType(o)) return null;
+            return o;
         }
 
-        /// <summary>
-        /// Returns the value of a column cast as a string.
-        /// </summary>
-        /// <param name="column">The name of the column</param>
-        /// <returns>The string value of the column, or null if it isn't present.</returns>
-        public string GetString(string column) 
+        public override void SetValue(string column, object o) 
         {
-            return (string) GetValue(column);
-        }
-
-        /// <summary>
-        /// Returns the value of a column cast as a DateTime.
-        /// </summary>
-        /// <param name="column">The name of the column</param>
-        /// <returns>The date value of the parameter, or null if it isn't present.</returns>
-        public DateTime? GetDate(string column) 
-        {
-            return (DateTime?) GetValue(column);
-        }
-
-        /// <summary>
-        /// Returns the value of a column cast as an int.
-        /// </summary>
-        /// <param name="column">The name of the column</param>
-        /// <returns>The int value of the column, or 0 if it isn't present.</returns>
-        public int GetInt(string column) 
-        {
-            object o = GetValue(column);
-            return o==null?0:(int) o;
-        }
-
-        public double GetDouble(string column)
-        {
-            object o = GetValue(column);
-            return o==null?0:(double) o;
+            if (HasColumn(column))
+                SetValue(column, o);
+            data[column] = o;
         }
 
         public override void LogValues()

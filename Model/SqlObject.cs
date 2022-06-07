@@ -20,11 +20,15 @@ namespace Truffle.Model
     public abstract class SqlObject
     {
         private PropertyInfo id;
+        private Dictionary<string, PropertyInfo> columns = new Dictionary<string, PropertyInfo>();
 
         /// <summary>
         /// Initialises an empty instance of an SqlObject
         /// </summary>
-        public SqlObject() {}
+        public SqlObject() 
+        {
+            LoadProperties();
+        }
 
         /// <summary>
         /// <para> Initialises a new instance of an SqlObject with a value in the key column in a database.
@@ -55,6 +59,7 @@ namespace Truffle.Model
 
         protected void InitFromDatabase(object value, string column, DatabaseConnector database)
         {
+            this.LoadProperties();
             string req = BuildRequest(value, column);
 
             var response = (List<Dictionary<string, object>>) database.RunCommand(req, complex:true);
@@ -69,6 +74,7 @@ namespace Truffle.Model
         /// <param name="values">The values to be stored and accessed in the object</param>
         public SqlObject(Dictionary<string, object> values)
         {
+            LoadProperties();
             LoadValues(values);
         }
 
@@ -90,7 +96,12 @@ namespace Truffle.Model
         public virtual string GetId()
         {
             if (id == null)
-                id = GetColumns<IdAttribute>().FirstOrDefault();
+                foreach (PropertyInfo p in columns.Values)
+                    if (p.GetCustomAttribute(typeof(IdAttribute)) != null)
+                    {
+                        id = p;
+                        break;
+                    }
             if (id == null) return null;
             var a = (ColumnAttribute) id.GetCustomAttribute(typeof(ColumnAttribute));
             return a.Name;
@@ -135,17 +146,16 @@ namespace Truffle.Model
         {
             Dictionary<string, object> ans = new Dictionary<string, object>();
 
-            foreach (PropertyInfo p in this.GetType().GetProperties())
+            foreach (KeyValuePair<string, PropertyInfo> c in columns)
             {
-                var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
-                if (attribute == null) continue;
+                PropertyInfo p = c.Value;
                 if (excludeOptional && p.GetCustomAttribute(typeof(IdentityAttribute)) != null)
                         continue;
 
                 var val = p.GetValue(this);
                 if (excludeOptional && val == null && p.GetCustomAttribute(typeof(OptionalAttribute)) != null)
                     continue;
-                ans.Add(attribute.Name, val);
+                ans.Add(c.Key, val);
             }
             return ans;
         }
@@ -155,7 +165,7 @@ namespace Truffle.Model
         /// </summary>
         public virtual void LogValues()
         {
-            foreach (var p in GetColumns<ColumnAttribute> ())
+            foreach (PropertyInfo p in columns.Values)
             {
                 Console.WriteLine($"{p.Name}: {p.GetValue(this)} of type {p.GetType()}");
             }
@@ -232,19 +242,27 @@ namespace Truffle.Model
             return true;
         }
 
+        private void LoadProperties()
+        {
+            foreach (var p in this.GetType().GetProperties())
+            {
+                var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
+                if (attribute == null) continue;
+                
+                columns.Add(attribute.Name, p);
+            }
+        }
+
         /// <summary>
         /// Loads a Dictionary of values into the object. Keys with corresponding column values are mapped and stored.
         /// </summary>
         /// <param name="values"></param>
         public virtual void LoadValues(Dictionary<string, object> values)
         {
-            foreach (PropertyInfo p in this.GetType().GetProperties())
+            foreach (KeyValuePair<string, PropertyInfo> c in columns)
             {
-                var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
-                if (attribute == null) continue;
-
                 try {
-                    var value = values[attribute.Name];
+                    var value = values[c.Key];
                     switch (value)
                     {
                     case (System.DBNull):
@@ -257,20 +275,20 @@ namespace Truffle.Model
                         value = Convert.ToInt32(value);
                         break;
                     case (Byte[]):
-                        if (p.PropertyType == typeof(byte))
+                        if (c.Value.PropertyType == typeof(byte))
                             break;
                         value = Convert.ToBase64String((byte[]) value);
                         break;
                     }
-                    p.SetValue(this, value);
+                    c.Value.SetValue(this, value);
                 } catch (KeyNotFoundException e)
                 {
-                    Console.WriteLine($"For property {p} of column {attribute.Name}: "); 
+                    Console.WriteLine($"For property {c.Value.Name} of column {c.Key}: "); 
                     Console.WriteLine(e.Message); 
                     Console.WriteLine(e.StackTrace);
                 } catch (Exception e)
                 {
-                    Console.WriteLine($"{e.GetType()} For property {p} of column {attribute.Name}: "); 
+                    Console.WriteLine($"For property {c.Value.Name} of column {c.Key}: "); 
                     Console.WriteLine(e.Message); 
                     Console.WriteLine(e.StackTrace);
                     throw;
@@ -284,16 +302,7 @@ namespace Truffle.Model
         /// <returns></returns>
         public virtual string BuildColumnSelector()
         {
-            List<string> values = new List<string>();
-            foreach (PropertyInfo p in this.GetType().GetProperties())
-            {
-                var attribute = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
-                if (attribute == null) continue;
-
-                values.Add($"[{attribute.Name}]");
-            }
-
-            return String.Join(",", values);
+            return String.Join(",", columns.Keys);
         }
 
         /// <summary>
@@ -316,7 +325,7 @@ namespace Truffle.Model
         public void Clean()
         {
 
-            foreach (var p in GetColumns<ColumnAttribute> ())
+            foreach (PropertyInfo p in columns.Values)
             {
                 try
                 {
@@ -343,10 +352,9 @@ namespace Truffle.Model
         /// </summary>
         public void Validate()
         {
-            foreach (PropertyInfo p in this.GetType().GetProperties())
+            foreach (KeyValuePair<string, PropertyInfo> c in columns)
             {
-                var c = (ColumnAttribute) p.GetCustomAttribute(typeof(ColumnAttribute));
-                if (c == null) continue;
+                PropertyInfo p = c.Value;
                 try
                 {
                     foreach (var a in p.GetCustomAttributes())
@@ -355,7 +363,7 @@ namespace Truffle.Model
                         {
                             var val = p.GetValue(this);
                             var validator = (DataValidatorAttribute) a;
-                            if (validator.Validate(c.Name, val, this)) continue;
+                            if (validator.Validate(c.Key, val, this)) continue;
 
                             throw new InvalidDataException(validator.GetMessage());
                         }
@@ -369,21 +377,90 @@ namespace Truffle.Model
             }
         }
 
-        protected IEnumerable<PropertyInfo> GetColumns<T> () where T: Attribute
-        {
-            foreach (PropertyInfo p in this.GetType().GetProperties())
-            {
-                var c = p.GetCustomAttribute(typeof(T));
-                if (c == null) continue;
-                yield return p;
-            }
-        }
-
         public static string GetTable(Type t)
         {
             var a = (TableAttribute) t.GetCustomAttribute(typeof(TableAttribute));
             if (a == null) return null;
             return a.Name;
+        }
+
+        public bool HasColumn(string column)
+        {
+            return columns.ContainsKey(column);
+        }
+        
+        /// <summary>
+        /// Retrieves a value of a column from the object.
+        /// </summary>
+        /// <param name="column">The name of the column</param>
+        /// <returns>The value of the column, or null if it isn't present.</returns>
+        public virtual object GetValue(string column) 
+        {
+            if (!HasColumn(column))
+                throw new KeyNotFoundException($"Column {column} does not exist in this model.");
+            PropertyInfo i = columns[column];
+            return i.GetValue(this);
+        }
+
+        public virtual void SetValue(string column, object o) 
+        {
+            if (!HasColumn(column))
+                throw new KeyNotFoundException($"Column {column} does not exist in this model.");
+            PropertyInfo i = columns[column];
+            i.SetValue(this, o);
+        }
+
+        /// <summary>
+        /// Returns the value of a column cast as a bool.
+        /// </summary>
+        /// <param name="column">The name of the column</param>
+        /// <returns>The boolean value of the column, or false if it isn't present.</returns>
+        public bool GetBoolean(string column) 
+        {
+            object o = GetValue(column);
+            return o==null?false:(bool) o;
+        }
+
+        /// <summary>
+        /// Returns the value of a column cast as a string.
+        /// </summary>
+        /// <param name="column">The name of the column</param>
+        /// <returns>The string value of the column, or null if it isn't present.</returns>
+        public string GetString(string column) 
+        {
+            return (string) GetValue(column);
+        }
+
+        /// <summary>
+        /// Returns the value of a column cast as a DateTime.
+        /// </summary>
+        /// <param name="column">The name of the column</param>
+        /// <returns>The date value of the parameter, or null if it isn't present.</returns>
+        public DateTime? GetDate(string column) 
+        {
+            return (DateTime?) GetValue(column);
+        }
+
+        /// <summary>
+        /// Returns the value of a column cast as an int.
+        /// </summary>
+        /// <param name="column">The name of the column</param>
+        /// <returns>The int value of the column, or 0 if it isn't present.</returns>
+        public int GetInt(string column) 
+        {
+            object o = GetValue(column);
+            return o==null?0:(int) o;
+        }
+
+        public double GetDouble(string column)
+        {
+            object o = GetValue(column);
+            return o==null?0:(double) o;
+        }
+
+        protected Dictionary<string, PropertyInfo> GetColumns()
+        {
+            return columns;
         }
     }
 }
