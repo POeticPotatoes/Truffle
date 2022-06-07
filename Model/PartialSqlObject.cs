@@ -80,7 +80,7 @@ namespace Truffle.Model
         public override object GetValue(string column) 
         {
             if (this.HasColumn(column))
-                data[column] = GetValue(column);
+                data[column] = base.GetValue(column);
             if (!data.ContainsKey(column)) return null;
             var o = data[column];
             if (typeof(System.DBNull).IsInstanceOfType(o)) return null;

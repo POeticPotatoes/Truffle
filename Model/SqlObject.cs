@@ -9,6 +9,7 @@ using Truffle.Procedures;
 using Truffle.Utils;
 using Truffle.Validation;
 using Trufle.Procedures;
+using System.Linq.Expressions;
 
 namespace Truffle.Model
 {
@@ -40,6 +41,7 @@ namespace Truffle.Model
         /// <param name="database">The database to connect to</param>
         public SqlObject(object value, DatabaseConnector database)
         {
+            this.LoadProperties();
             InitFromDatabase(value, GetId(), database);
         }
 
@@ -54,12 +56,12 @@ namespace Truffle.Model
         /// <param name="database">The database to connect to</param>
         public SqlObject(object value, string column, DatabaseConnector database)
         {
+            this.LoadProperties();
             InitFromDatabase(value, column, database);
         }
 
         protected void InitFromDatabase(object value, string column, DatabaseConnector database)
         {
-            this.LoadProperties();
             string req = BuildRequest(value, column);
 
             var response = (List<Dictionary<string, object>>) database.RunCommand(req, complex:true);
