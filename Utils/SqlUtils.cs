@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using Newtonsoft.Json.Linq;
 
 namespace Truffle.Utils
@@ -17,7 +18,7 @@ namespace Truffle.Utils
             switch (raw)
             {
                 case string:
-                    return $"'{raw}'";
+                    return $"'{raw.Clean()}'";
                 case int:
                     return $"{raw}";
                 case float:
@@ -29,7 +30,26 @@ namespace Truffle.Utils
                 case double:
                     return $"{raw}";
             }
-            return $"'{raw.ToString()}'";
+            return $"'{raw.Clean()}'";
+        }
+
+        private static string Clean(this object raw)
+        {
+            string str = raw.ToString();
+            var ans = new StringBuilder();
+
+            for (var i=0; i< str.Length; i++)
+            {
+                char c = str[i];
+                switch (c)
+                {
+                    case '\'':
+                        ans.Append('\'');
+                        break;
+                }
+                ans.Append(c);
+            }
+            return ans.ToString();
         }
 
         /// <summary>
