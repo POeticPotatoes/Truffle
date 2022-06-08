@@ -57,7 +57,7 @@ namespace Truffle.Model
             foreach (KeyValuePair<string, PropertyInfo> c in GetColumns())
             {
                 if (ignoreIdentities && c.Value.GetCustomAttribute(typeof(IdentityAttribute)) != null)
-                    ignore.Add(c.Value.Name);
+                    ignore.Add(c.Key);
 
                 data[c.Key] =  c.Value.GetValue(this);
             }
@@ -90,7 +90,7 @@ namespace Truffle.Model
         public override void SetValue(string column, object o) 
         {
             if (HasColumn(column))
-                SetValue(column, o);
+                base.SetValue(column, o);
             data[column] = o;
         }
 

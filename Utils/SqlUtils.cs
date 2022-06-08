@@ -29,7 +29,7 @@ namespace Truffle.Utils
                 case double:
                     return $"{raw}";
             }
-            return raw.ToString();
+            return $"'{raw.ToString()}'";
         }
 
         /// <summary>

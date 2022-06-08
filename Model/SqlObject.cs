@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Linq;
 using Truffle.Database;
 using Truffle.Procedures;
 using Truffle.Utils;
 using Truffle.Validation;
 using Trufle.Procedures;
-using System.Linq.Expressions;
 
 namespace Truffle.Model
 {
