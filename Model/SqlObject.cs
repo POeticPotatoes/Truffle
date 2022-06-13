@@ -177,7 +177,7 @@ namespace Truffle.Model
         /// <param name="database">The database to create a new entry in</param>
         public virtual void Create(DatabaseConnector database, bool validate=true) 
         {
-            var inserter = CreateEditor<SqlInserter>();
+            var inserter = CreateEditor<SqlInserter>(validate);
             inserter.Insert(GetTable(),database);
         }
 
@@ -187,7 +187,7 @@ namespace Truffle.Model
         /// <param name="database">The database to create a new entry in</param>
         public virtual async Task CreateAsync(DatabaseConnector database, bool validate=true) 
         {
-            var inserter = CreateEditor<SqlInserter>();
+            var inserter = CreateEditor<SqlInserter>(validate);
             await inserter.InsertAsync(GetTable(),database);
         }
 
@@ -197,7 +197,7 @@ namespace Truffle.Model
         /// <param name="database">The database to update</param>
         public virtual void Update(DatabaseConnector database, bool validate=true) 
         {
-            var updater = CreateEditor<SqlUpdater>();
+            var updater = CreateEditor<SqlUpdater>(validate);
             updater.Update(GetTable(),database);
         }
 
@@ -207,7 +207,7 @@ namespace Truffle.Model
         /// <param name="database">The database to update</param>
         public virtual async Task UpdateAsync(DatabaseConnector database, bool validate=true) 
         {
-            var updater = CreateEditor<SqlUpdater>();
+            var updater = CreateEditor<SqlUpdater>(validate);
             await updater.UpdateAsync(GetTable(),database);
         }
 
@@ -315,7 +315,7 @@ namespace Truffle.Model
         protected string BuildRequest(object value, string column) 
         {
             string val = SqlUtils.Parse(value);
-            return $"SELECT TOP 1 {BuildColumnSelector()} FROM {GetTable()} WHERE {column}={val}";
+            return $"SELECT TOP 1 {BuildColumnSelector()} FROM {GetTable()} WHERE [{column}]={val}";
         }
 
         /// <summary>
@@ -324,7 +324,6 @@ namespace Truffle.Model
         /// </summary>
         public void Clean()
         {
-
             foreach (PropertyInfo p in columns.Values)
             {
                 try
