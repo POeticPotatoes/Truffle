@@ -192,6 +192,14 @@ namespace Truffle.Procedures
             return this;
         }
 
+        public SqlSelector NotNull(string column)
+        {
+            var addition = $"[{column}] is not null";
+            if (builder.Length > 1) builder.Append(") and (");
+            builder.Append(addition);
+            return this;
+        }
+
         public SqlSelector Or(string column, object value, bool not=false)
         {
             var addition = $"[{column}]{SqlUtils.ParseSelector(value)}";

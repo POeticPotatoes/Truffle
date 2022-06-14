@@ -185,10 +185,10 @@ namespace Truffle.Model
         /// Creates a new entry in a database asynchronously with values stored in this object.
         /// </summary>
         /// <param name="database">The database to create a new entry in</param>
-        public virtual async Task CreateAsync(DatabaseConnector database, bool validate=true) 
+        public virtual Task CreateAsync(DatabaseConnector database, bool validate=true) 
         {
             var inserter = CreateEditor<SqlInserter>(validate);
-            await inserter.InsertAsync(GetTable(),database);
+            return inserter.InsertAsync(GetTable(),database);
         }
 
         /// <summary>
@@ -205,12 +205,23 @@ namespace Truffle.Model
         /// Updates an existing entry in a database with values stored in this object.
         /// </summary>
         /// <param name="database">The database to update</param>
-        public virtual async Task UpdateAsync(DatabaseConnector database, bool validate=true) 
+        public virtual Task UpdateAsync(DatabaseConnector database, bool validate=true) 
         {
             var updater = CreateEditor<SqlUpdater>(validate);
-            await updater.UpdateAsync(GetTable(),database);
+            return updater.UpdateAsync(GetTable(),database);
         }
 
+        public virtual void Delete(DatabaseConnector database, int top=1, string orderby=null)
+        {
+            var selector = new SqlSelector().Set(GetId(), GetIdValue());
+            database.RunCommand(selector.BuildDelete(GetTable(), top, orderby));
+        }
+
+        public virtual Task DeleteAsync(DatabaseConnector database, int top=1, string orderby=null)
+        {
+            var selector = new SqlSelector().Set(GetId(), GetIdValue());
+            return database.RunCommandAsync(selector.BuildDelete(GetTable(), top, orderby));
+        }
         public T CreateEditor<T>(bool validate = true) where T: SqlEditor
         {
             if (validate)
