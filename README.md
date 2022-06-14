@@ -313,6 +313,8 @@ public class Dog : SqlObject
     public double Weight {get;set;}
     [Column("happy")]
     public bool IsHappy {get;set;}
+
+    public Dog(): base() {}
 }
 ```
 
@@ -448,8 +450,21 @@ using (var database = new DatabaseConnector("MyConnectionString"))
     // Change a value
     dog.Owner = "Matthew";
 
+    // Update a value by column
+    dog.SetValue("Owner", "Tom");
+
+    // Get a value by column
+    int age = dog.GetInt("Age");
+
+    // Get the name or value of the Id column
+    dog.GetId();
+    dog.GetIdValue();
+
     // Update the exisitng entry in a database
     dog.Update(database);
+    
+    // Delete an entry in a database, by ID
+    dog.Delete(database);
 }
 ```
 
@@ -571,7 +586,7 @@ public abstract class SqlObject
 #### Method Summary
 | Modifier and Type | Method | Summary |
 | --- | --- | --- |
-| protected **Enumerable\<PropertyInfo>** | **GetColumns**\<**T**> | Returns an iterable list of properties containing the desired `Attribute`
+| protected **Dictionary\<string, PropertyInfo>** | **GetColumns**\<**T**> | Returns a column-property dictionary of values.
 | protected void | **InitFromDatabase**(**object** value, **string** column, **DatabaseConnector** database) | Initialises itself with an entry from a database based on a column-value pair. |
 | public virtual void | **LoadValues**(**Dictionary<string, object>**) | Initialises itself with values from a dictionary. |
 | protected string | **BuildRequest**(**object** value, **string** column) | Builds a select string for the first entry in a database with a matching column-value pair. |
@@ -582,24 +597,22 @@ public abstract class SqlObject
 | public void | **Validate**() | Checks all columns for `DataValidatorAttribute` and throws an error if any validation fails.
 | public virtual string | **GetId**() | Returns the name of the `Id` column for the object. If no property has been marked with the `Id` Attribute, this returns null. |
 | public virtual object | **GetIdValue**() | Returns the current value of the property representing the `Id` of the object. |
-| public virtual string | **GetTable**() | Returns the table of the object as declared in the `Table` Annotation. |
+| public virtual object | **GetValue**(string column) | Gets the value of a column in the object. |
+| public virtual string | **SetValue**(string column, object o) | Sets the value of a column in the object. |
+| public virtual bool | **GetBoolean**(string column) | Gets the boolean value of a column in the object. |
+| public virtual string | **GetString**() | Gets the string value of a column in the object. |
+| public virtual DateTime? | **GetDate**() | Gets the date value of a column in the object. |
+| public virtual int | **GetInt**() | Gets the int value of a column in the object. |
+| public virtual double | **GetDouble**() | Gets the double value of a column in the object. |
 | public virtual **Dictionary<string, object>** | **GetAllValues**(**bool** ignoreIdentities=false) | Returns a `Dictionary` with all values currently held within the `SqlObject`. |
 | public virtual void | **LogValues**() | Logs all keys, values, and types currently stored in the object with `Console#WriteLine`. |
 | public virtual void | **Create**(**DatabaseConnector** database, **bool** validate=true) | Creates a new entry in a database with values stored in this object. |
 | public virtual async **Task** | **CreateAsync**(**DatabaseConnector** database, **bool** validate=true) | Asynchronously creates a new entry in a database with values stored in this object. |
 | public virtual void | **Update**(**DatabaseConnector** database, **bool** validate=true) | Updates an existing entry with a corresponding `Id` value in an SQL database with values stored in this object. |
-| public virtual **Task** | **Update**(**DatabaseConnector** database, **bool** validate=true) | Updates an existing entry with a corresponding `Id` value in an SQL database with values stored in this object. |
+| public virtual **Task** | **UpdateAsync**(**DatabaseConnector** database, **bool** validate=true) | Updates an existing entry with a corresponding `Id` value in an SQL database with values stored in this object. |
+| public virtual void | **Delete**(**DatabaseConnector** database) | Deletes an existing entry from a database based on `Id`
+| public virtual **Task** | **DeleteAsync**(**DatabaseConnector** database) | Asynchronously deletes an existing entry from a database based on `Id`|
 | public virtual **T** | **CreateEditor**<**T**>(**bool** validate=true) | Instantiates an `SqlEditor` and loads values from this object into it. |
-
-<hr>
-
-#### `GetColumns()`
-> protected IEnumerable\<PropertyInfo> GetColumns\<T> () where T: Attribute
-
-Returns an iterable of properties containing the desired `Attribute`.
-
-**Parameters**
-- **T** - The type of attribute to look for
 
 <hr>
 
@@ -614,18 +627,6 @@ The SQL query is created with `BuildRequest()` and values are initialised with `
 - **value** - The value of the column
 - **column** - The name of the column
 - **database** - The database to retrieve from
-
-<hr>
-
-#### `LoadValues()`
-> public virtual void LoadValues(Dictionary<string, object> values)
-
-Initialises itself with values from a dictionary.
-
-Properties with `Column` attributes will have their values set to corresponding keys in the dictionary.
-
-**Parameters**
-- **values** - The dictionary to initialise values in the object with
 
 <hr>
 
@@ -684,6 +685,16 @@ SqlSelector selector = new SqlSelector();
 // Select rows where breed = "Golden Retriever"
 selector.Set("breed", "Golden Retriever");
 
+// Select rows where name is NOT spot.
+// This optional argument is present in all "Set" methods
+selector.Set("name", "Spot", not:true);
+
+// Select rows where the name contains the string "ark" like "Mark" or "Spark"
+selector.SetLike("name", "ark")
+
+// Select rows where the house is not null
+selector.NotNull("house");
+
 // Select rows where age is between 3 and 5. 
 // A SetBetween() method is also provided that has the same function
 int[] ages = {3,5};
@@ -691,14 +702,13 @@ selector.Set("age", ages);
 
 // Select multiple parameters at once by passing in a dictionary
 var values = new Dictionary<string, object>();
-values.Add("owner", "mark");
+values.Add("owner", "tom");
 values.Add("weight", new int[] {10, 15})
 selector.SetAll(values);
 
 // Get the string from the selector that returns columns name and owner
 string cmd = selector.BuildSelect("[dbo].[tblDog]", "name, owner");
 var result = database.RunCommand(cmd);
-}
 ```
 
 On top of the `BuildSelect()` method, SqlSelector is also able to directly parse select results into SqlObjects with its asynchronous `BuildObjects` method:

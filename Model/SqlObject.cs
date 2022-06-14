@@ -412,12 +412,12 @@ namespace Truffle.Model
             return i.GetValue(this);
         }
 
-        public virtual void SetValue(string column, object o) 
+        public virtual void SetValue(string column, object value) 
         {
             if (!HasColumn(column))
                 throw new KeyNotFoundException($"Column {column} does not exist in this model.");
             PropertyInfo i = columns[column];
-            i.SetValue(this, o);
+            i.SetValue(this, value);
         }
 
         /// <summary>
