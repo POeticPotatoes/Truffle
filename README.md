@@ -128,7 +128,7 @@ class SqlSelector {
 }
 
 DatabaseConnector *-- SqlConnection
-DatabaseConnector --> DataCollector
+DatabaseConnector ..> DataCollector
 SqlObject --> DatabaseConnector
 SqlObject *-- Id
 SqlObject *-- Column

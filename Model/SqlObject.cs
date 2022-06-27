@@ -82,7 +82,7 @@ namespace Truffle.Model
         /// Builds a string that can be used to select all relevant columns and return all entries from a table.
         /// </summary>
         /// <returns>The generated string.</returns>
-        public string BuildAllRequest(int top = -1, string orderBy = null) 
+        public virtual string BuildAllRequest(int top = -1, string orderBy = null) 
         {
             string num = top==-1?"":$"TOP {top} ",
                    order = orderBy == null?"": $" order by {orderBy}";

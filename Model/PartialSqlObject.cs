@@ -99,7 +99,9 @@ namespace Truffle.Model
             Dictionary<string, object> values = GetAllValues();
             foreach (string key in values.Keys)
             {
-                Console.WriteLine($"{key}: {values[key]} of type {values[key].GetType()}");
+                Object o = values[key];
+                String s = o == null? "null": o.GetType().Name;
+                Console.WriteLine($"{key}: {o} of type {s}");
             }
         }
 
