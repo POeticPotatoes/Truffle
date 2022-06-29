@@ -63,16 +63,4 @@ namespace Truffle.Validation
             return builder.ToString();
         }
     }
-
-    /// <summary>
-    /// Sets the value of a DateTime? field to the current time
-    /// </summary>
-    public class DateNowAttribute: DataCleanerAttribute 
-    {
-
-        public override object Clean(string name, object value, SqlObject model)
-        {
-            return DateTime.Now;
-        }
-    }
 }

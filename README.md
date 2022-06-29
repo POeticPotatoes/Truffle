@@ -7,6 +7,7 @@ This library was written by POeticPotatoes, who created it in the process of bui
 
 ## Table of Contents
 * [Introduction](#introduction)
+* [Installation](#installation)
 * [Technologies](#technologies)
 * [Structure Overview](#structure-overview)
 * [Usage](#usage)
@@ -48,6 +49,12 @@ Truffle's classes provide 4 main utilities:
 4. Retrieving, updating and inserting values into a table with direct mapping from created models
 
 These functions may be utilised by instantiation and/or extension of Truffle's classes that allow for the flexible retrieval and modification of data.
+
+## Installation
+A nuget package for this library has yet to be set up, but it may still be added to your dotnet projects manually:
+
+1. Install the `System.Data.SqlClient` nuget package
+2. Clone this repository into your project
 
 ## Technologies
 * Dotnet version: 6.0
