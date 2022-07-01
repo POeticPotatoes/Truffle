@@ -24,7 +24,7 @@ namespace Truffle.Utils
                 case float:
                     return $"{raw}";
                 case DateTime:
-                    return $"'{((DateTime)raw).ToString("yyyy-MM-dd")}'";
+                    return $"'{((DateTime)raw).ToString("yyyy-MM-dd HH:mm:ss tt")}'";
                 case bool:
                     return ((bool)raw)?"1":"0";
                 case double:
