@@ -24,7 +24,10 @@ namespace Truffle.Procedures
         /// A subsequent Insert() call would create a new entry in the database with values from the object.
         /// </summary>
         /// <param name="o">The SqlObject to be created</param>
-        public SqlInserter(SqlObject o, bool validate=true) : base(o, validate) {}
+        public SqlInserter(SqlObject o, bool validate=true) : base(o, validate) 
+        {
+            this.sqlObject = o;
+        }
 
         /// <summary>
         /// Inserts a new entry to the database in the given table, with values stored in this object.
