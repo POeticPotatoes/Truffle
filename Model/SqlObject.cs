@@ -182,6 +182,18 @@ namespace Truffle.Model
         }
 
         /// <summary>
+        /// Creates a new entry in a database with values stored in this object.
+        /// Used when we want to create a new entry with a serial primary key
+        /// </summary>
+        /// <param name="database">The database to create a new entry in</param>
+        /// <returns>The entry that was created with its serial priamry key</returns>
+        public virtual object CreateWithOutput(DatabaseConnector database, bool validate=true) 
+        {
+            var inserter = CreateEditor<SqlInserter>(validate);
+            return inserter.InsertWithOutput(GetTable(),database);
+        }
+
+        /// <summary>
         /// Creates a new entry in a database asynchronously with values stored in this object.
         /// </summary>
         /// <param name="database">The database to create a new entry in</param>
