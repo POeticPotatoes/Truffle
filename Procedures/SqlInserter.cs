@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Truffle.Database;
@@ -78,27 +79,28 @@ namespace Truffle.Procedures
         {
             Dictionary<string, string> fields = GetFields();
             if (fields.Count == 0) return null;
+            StringBuilder cmd = new StringBuilder(
+                    $"insert {table} ({String.Join(',', fields.Keys)})");
             if (output) 
-            {
-                return $"insert {table} ({String.Join(',', fields.Keys)}) output {BuildOutputCommand()} values ({String.Join(',',fields.Values)})";
-            }
-            return $"insert {table} ({String.Join(',', fields.Keys)}) values ({String.Join(',',fields.Values)})";
+                cmd.Append($" output {BuildOutputCommand()}");
+            cmd.Append($" values ({String.Join(',',fields.Values)})");
+            return cmd.ToString();
         }
 
         private string BuildOutputCommand()
         {
-            string outputColumns = sqlObject.BuildColumnSelector();
-            string[] temp = outputColumns.Split(",");
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < temp.Length; i++)
-            {
-                string col = temp[i];
-                string toAppend = i == temp.Length - 1 
-                    ? $"inserted.[{col}] "
-                    : $"inserted.[{col}], ";
-                sb.Append(toAppend);
-            }
-            return sb.ToString();
+            List<string> columns;
+            if (sqlObject != null)
+                columns = sqlObject.GetColumnNames();
+            else
+                columns = new List<string>(GetFields().Keys);
+
+            StringBuilder cmd = new StringBuilder();
+            foreach (string col in columns)
+                cmd.Append($"inserted.[{col}], ");
+
+            cmd.Length -= 2;
+            return cmd.ToString();
         }
     }
 }

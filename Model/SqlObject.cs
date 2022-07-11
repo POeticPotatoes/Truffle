@@ -484,5 +484,10 @@ namespace Truffle.Model
         {
             return columns;
         }
+
+        public List<string> GetColumnNames()
+        {
+            return new List<string>(columns.Keys);
+        }
     }
 }
