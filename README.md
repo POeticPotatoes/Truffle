@@ -3,7 +3,7 @@ Truffle is a lightweight SQL management library written on top of `ASP.net` that
 
 Truffle provides additional flexibility by having all of its classes extendable, and allows the user to implement their own data validations and procedures.
 
-This library was written by POeticPotatoes, who created it in the process of building backend services at work.
+This library was written by POeticPotatoes, who created it in the process of building backend services at work. It is currently in use by the company in question for most of its backend API's, although he no longer works there.
 
 ## Table of Contents
 * [Introduction](#introduction)
